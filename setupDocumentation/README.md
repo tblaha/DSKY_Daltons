@@ -35,10 +35,9 @@ Now, create the custom `.dco` files here (not the to be borrowed ones). Make sur
 └── vehicleState.dco
 ```
 
-Add those `.dco`s to the `.lst`:
+Add those `.dco`s to the `comm-objects.lst` so they'll get compiled.
 
-
-Add sources with `dueca-project add-source *.dco` (all of the `.dco`'s).
+Add sources with `dueca-project add-source *.dco` (this selects all of the `.dco`'s).
 
 Commit
 ```
@@ -47,58 +46,7 @@ dueca-project commit
 ```
 
 
-### Add borrowed `.dco` files
-
-
-### Borrow/copy existing modules
-
-Move to correct directory  `cd DSKY_Daltons_Project/DSKY_Daltons_Project`
-
-*Borrow Stick related modules*
-```
-dueca-project borrow-module
-# name: SimCourse2021/multi-stick
-
-dueca-project borrow-module
-# name: SimCourse2021/gui-stick
-```
-
-*Copy HUD (as we'll have to change it)*
-```
-dueca-project copy-module
-# name: SimCourse2021/F16HUD
-```
-
-### Verify what we got so far
-
-```
-<myPath>/DSKy_Daltons_Project $ tree -L 2
-.
-├── DSKY_Daltons_Project
-│   ├── comm-objects
-│   ├── CVS
-│   ├── F16HUD
-│   ├── Makefile -> Makefile.common
-│   ├── Makefile.common
-│   ├── modules.solo
-│   └── run
-└── SimCourse2021
-    ├── comm-objects
-    └── multi-stick
-```
-
-### commit
-
-```
-cd DSKY_Daltons_Project/DSKY_Daltons_Project
-dueca-project update
-dueca-project commit
-```
-
-
-
 # Create secondary projects for our own modules
-
 
 ### Controller
 
