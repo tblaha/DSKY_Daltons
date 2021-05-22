@@ -1,0 +1,7 @@
+# this file contains a list of all modules needed for your application
+# on a specific machine
+# note that the comm-objects directories should not be listed here
+# example:
+# DSKY_Daltons_Dynamics/some-module
+
+DSKY_Daltons_Dynamics/dynamics 

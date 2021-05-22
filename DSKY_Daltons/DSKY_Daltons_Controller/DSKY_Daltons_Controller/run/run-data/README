@@ -1,0 +1,23 @@
+run-data and platform file rules
+--------------------------------
+
+This directory contains the data, initial condition files, bitmaps, etc
+that you need for running your application. Some hints for what data
+to put where:
+
+    * Configuration files, data, etc. *specific to one project only*
+      goes in the run/run-data folder
+    * Data that can be shared with other projects (3D models, bitmaps
+      etc, common configuration for e.g. hardware devices) is best
+      kept in a 'module' directory. Either together with module code
+      (such as for glade files matching a certain experiment interface)
+      or separately (e.g. visual terrain data). If you remove the
+      comm-objects.lst and Makefile from a module directory, it is treated
+      as a pseudo-module, and not included for compilation and you can
+      keep data there.
+    * Log data should not be checked in with the project.
+    * The run directories, under run/<platform>/node, only contain
+      - project configuration; dueca.cnf/dueca.mod, or
+        dueca_cnf.py/dueca_mod.py
+      - links.script and clean.script, which create links to all
+        appropriate data

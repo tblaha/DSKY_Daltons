@@ -1,0 +1,11 @@
+# this file contains a list of all communicated objects needed by this
+# specific module
+# specify these with the .dco extension, examples:
+# DSKY_Daltons_Dynamics/comm-objects/MyDataObject.dco
+# Generic/comm-objects/PrimaryControls.dco
+
+DSKY_Daltons_Project/comm-objects/vehicleState.dco
+DSKY_Daltons_Project/comm-objects/thrusterForces.dco
+DSKY_Daltons_Project/comm-objects/terrainDataAtCurrentLocation.dco
+DSKY_Daltons_Project/comm-objects/initState.dco
+

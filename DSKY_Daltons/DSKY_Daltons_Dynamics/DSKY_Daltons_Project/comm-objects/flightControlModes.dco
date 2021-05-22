@@ -1,0 +1,5 @@
+(Type int)
+
+(Event flightControlModes
+    (int rate_mode_on)
+)

@@ -1,0 +1,11 @@
+(Type float)
+
+(Stream terrainDataAtCurrentLocation
+    (float SurfToCGx (Default 1.0f))
+    (float SurfToCGy (Default 1.0f))
+    (float SurfToCGz (Default 1.0f))
+
+    (float SurfNx (Default 0.0f))
+    (float SurfNy (Default 0.0f))
+    (float SurfNz (Default -1.0f))
+)

@@ -1,0 +1,9 @@
+(Type float)
+
+(Stream setpoints
+    (float p_set (Default 0.0f))
+    (float q_set (Default 0.0f))
+    (float r_set (Default 0.0f))
+
+    (float zdot_set (Default 0.0f))
+)

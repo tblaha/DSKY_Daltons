@@ -1,0 +1,27 @@
+/AircraftReference.cxx/1.1/Thu May 13 14:16:05 2021//
+/AircraftReference.hxx/1.1/Thu May 13 14:16:05 2021//
+/AltTape.cxx/1.1/Thu May 13 14:16:05 2021//
+/AltTape.hxx/1.1/Thu May 13 14:16:05 2021//
+/BankIndicator.cxx/1.1/Thu May 13 14:16:05 2021//
+/BankIndicator.hxx/1.1/Thu May 13 14:16:05 2021//
+/F16HUD.cxx/1.4/Thu May 20 09:34:20 2021//
+/F16HUD.hxx/1.3/Wed May 19 11:58:50 2021//
+/F16HUDOSGCallback.cxx/1.1/Thu May 13 14:16:05 2021//
+/F16HUDOSGCallback.hxx/1.1/Thu May 13 14:16:05 2021//
+/F16HUDOSGObjectCallback.cxx/1.1/Thu May 13 14:16:05 2021//
+/F16HUDOSGObjectCallback.hxx/1.1/Thu May 13 14:16:05 2021//
+/F16HUDWindow.cxx/1.1/Thu May 13 14:16:05 2021//
+/F16HUDWindow.hxx/1.1/Thu May 13 14:16:05 2021//
+/HUD.cxx/1.1/Thu May 13 14:16:05 2021//
+/HUD.hxx/1.1/Thu May 13 14:16:05 2021//
+/HeadingTape.cxx/1.1/Thu May 13 14:16:05 2021//
+/HeadingTape.hxx/1.1/Thu May 13 14:16:05 2021//
+/Makefile/1.1/Thu May 13 14:16:05 2021//
+/PitchLadder.cxx/1.1/Thu May 13 14:16:05 2021//
+/PitchLadder.hxx/1.1/Thu May 13 14:16:05 2021//
+/SpeedTape.cxx/1.1/Thu May 13 14:16:05 2021//
+/SpeedTape.hxx/1.1/Thu May 13 14:16:05 2021//
+/comm-objects.lst/1.1/Thu May 13 14:16:05 2021//
+/gl2dobjects.cxx/1.1/Thu May 13 14:16:05 2021//
+/gl2dobjects.hxx/1.1/Thu May 13 14:16:05 2021//
+D

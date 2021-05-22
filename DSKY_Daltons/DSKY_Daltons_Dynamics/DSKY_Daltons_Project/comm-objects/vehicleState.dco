@@ -1,0 +1,28 @@
+(Type float)
+
+(Stream vehicleState
+    (float x (Default 0.0f))
+    (float y (Default 0.0f))
+    (float z (Default 0.0f))
+
+    (float u (Default 0.0f))
+    (float v (Default 0.0f))
+    (float w (Default 0.0f))
+
+    (float e0 (Default 1.0f))
+    (float ex (Default 0.0f))
+    (float ey (Default 0.0f))
+    (float ez (Default 0.0f))
+
+    (float p (Default 0.0f))
+    (float q (Default 0.0f))
+    (float r (Default 0.0f))
+
+    (float mass (Default 0.0f))
+    (float thrust (Default 0.0f))
+
+    (float lgDelta1 (Default 0.0f))
+    (float lgDelta2 (Default 0.0f))
+    (float lgDelta3 (Default 0.0f))
+    (float lgDelta4 (Default 0.0f))
+)

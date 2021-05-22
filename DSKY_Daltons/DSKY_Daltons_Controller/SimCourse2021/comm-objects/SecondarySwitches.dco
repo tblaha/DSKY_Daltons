@@ -1,0 +1,9 @@
+(Type bool)
+
+(EventAndStream SecondarySwitches
+		(bool AT_disconnect (Default false))
+		(bool ignition_left (Default false))
+		(bool ignition_right (Default false))
+		(bool gear_up (Default false))
+		(bool gear_neutral (Default false))
+		(bool gear_down (Default false)))
