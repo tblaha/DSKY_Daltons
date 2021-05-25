@@ -1,0 +1,62 @@
+# the channels on which the module-under-test (MUD) should return the correct outputs
+# there must be at least 1
+stream_output_channels:
+- DSKY_Daltons_Project/comm-objects/thrusterForces
+
+# the channels on which to supply input data to the MUD
+# there must be at least 1
+stream_input_channels:
+- DSKY_Daltons_Project/comm-objects/vehicleState
+- SimCourse2021/comm-objects/PrimaryControls
+- SimCourse2021/comm-objects/PrimarySwitches
+- SimCourse2021/comm-objects/SecondaryControls
+- SimCourse2021/comm-objects/SecondarySwitches
+
+# Elements of the stream_output_channels to be written to the test report file as raw values
+debug_outputs:
+- thrusterForces.Fx
+- thrusterForces.Fy
+- thrusterForces.Fz
+- thrusterForces.Mx
+- thrusterForces.My
+- thrusterForces.Mz
+
+# actual test definition
+tests:
+  - test0:
+    id: 0
+    desc: Tests the initial response of the main engine thrust controller to pilot input
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.x: 0.0f
+      vehicleState.y: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.mass: 1000.0f
+      PrimaryControls.uc: 1.0f
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [-10000.0f, 1.0f] 
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test1:
+    id: 1
+    desc: Tests the initial response of the controller to yaw pilot input
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.x: 0.0f
+      vehicleState.y: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.mass: 1000.0f
+      PrimaryControls.ux: 1.0f
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [0.0f, 1.0f] 
+      thrusterForces.Mx: [1000.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+    

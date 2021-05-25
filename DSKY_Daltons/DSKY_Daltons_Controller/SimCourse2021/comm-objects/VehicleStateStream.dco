@@ -1,5 +1,6 @@
 (Type int)
 (Type double)
+(Type bool)
 
 (Stream VehicleStateStream
 		(int GroupNumber)
@@ -28,4 +29,5 @@
 		(double y_LG)
 		(double z_LG)
 		(double F_LG)
+		(bool Landing_gear_bool)
 )

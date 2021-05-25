@@ -1,0 +1,14 @@
+# this file contains a list of all communicated objects needed by this
+# specific module
+# specify these with the .dco extension, examples:
+# DSKY_Daltons_Controller/comm-objects/MyDataObject.dco
+# Generic/comm-objects/PrimaryControls.dco
+
+{% for ch in stream_input_channels -%}
+{{ ch }}.dco
+{% endfor %}
+
+{% for ch in stream_output_channels -%}
+{{ ch }}.dco
+{% endfor %}
+

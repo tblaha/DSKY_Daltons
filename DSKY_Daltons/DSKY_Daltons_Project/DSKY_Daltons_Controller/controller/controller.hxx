@@ -67,8 +67,8 @@ private: // channel access
   StreamChannelReadToken<PrimaryControls> myControlPrimaryStreamReadToken;
   StreamChannelReadToken<SecondaryControls> myControlSecondaryStreamReadToken;
 
-  EventChannelReadToken<PrimarySwitches> mySwitchPrimaryEventReadToken;
-  EventChannelReadToken<SecondarySwitches> mySwitchSecondaryEventReadToken;
+  StreamChannelReadToken<PrimarySwitches> mySwitchPrimaryStreamReadToken;
+  StreamChannelReadToken<SecondarySwitches> mySwitchSecondaryStreamReadToken;
 
   // Tokens for the vehicle state
   StreamChannelReadToken<vehicleState> myVehicleStateStreamReadToken;
@@ -80,7 +80,7 @@ private: // channel access
 private: // activity allocation
   /** You might also need a clock. Don't mis-use this, because it is
       generally better to trigger on the incoming channels */
-  //PeriodicAlarm        myclock;
+  PeriodicAlarm        myclock;
 
   /** Callback object for simulation calculation. */
   Callback<controller>  cb1;

@@ -1,19 +1,19 @@
 /* ------------------------------------------------------------------   */
-/*      item            : controller.hxx
+/*      item            : unit_tester.hxx
         made by         : tblaha
         from template   : DusimeModuleTemplate.hxx
         template made by: Rene van Paassen
-        date            : Thu May 13 15:41:29 2021
+        date            : Sat May 22 20:22:15 2021
         category        : header file
         description     :
-        changes         : Thu May 13 15:41:29 2021 first version
+        changes         : Sat May 22 20:22:15 2021 first version
         template changes: 030401 RvP Added template creation comment
         language        : C++
         copyright       : (c) 2016 TUDelft-AE-C&S
 */
 
-#ifndef controller_hxx
-#define controller_hxx
+#ifndef unit_tester_hxx
+#define unit_tester_hxx
 
 // include the dusime header
 #include <dusime.h>
@@ -21,6 +21,7 @@ USING_DUECA_NS;
 
 // This includes headers for the objects that are sent over the channels
 #include "comm-objects.h"
+#include "tester.hxx"
 
 // include headers for functions/classes you need in the module
 
@@ -30,26 +31,15 @@ USING_DUECA_NS;
     The instructions to create an module of this class from the Scheme
     script are:
 
-    \verbinclude controller.scm
+    \verbinclude unit_tester.scm
 */
-class controller: public SimulationModule
+class unit_tester: public SimulationModule, public tester
 {
   /** self-define the module type, to ease writing the parameter table */
-  typedef controller _ThisModule_;
+  typedef unit_tester _ThisModule_;
 
 private: // simulation data
   // declare the data you need in your simulation
-  float myRollRate;
-  float myPitchRate;
-  float myYawRate;
-  float myThrottle;
-  
-  float myMx;
-  float myMy;
-  float myMz;
-  float myFx;
-  float myFy;
-  float myFz;
 
 private: // trim calculation data
   // declare the trim calculation data needed for your simulation
@@ -62,20 +52,7 @@ private: // channel access
   // examples:
   // ChannelReadToken    r_mytoken;
   // ChannelWriteToken   w_mytoken;
-
-  // Tokens for the primary and secondary channels for control and switches
-  StreamChannelReadToken<PrimaryControls> myControlPrimaryStreamReadToken;
-  StreamChannelReadToken<SecondaryControls> myControlSecondaryStreamReadToken;
-
-  StreamChannelReadToken<PrimarySwitches> mySwitchPrimaryStreamReadToken;
-  StreamChannelReadToken<SecondarySwitches> mySwitchSecondaryStreamReadToken;
-
-  // Tokens for the vehicle state
-  StreamChannelReadToken<vehicleState> myVehicleStateStreamReadToken;
-
-  //Token to write to thruster force
-  StreamChannelWriteToken<thrusterForces> myThrusterForcesStreamWriteToken;
-
+  
 
 private: // activity allocation
   /** You might also need a clock. Don't mis-use this, because it is
@@ -83,7 +60,7 @@ private: // activity allocation
   PeriodicAlarm        myclock;
 
   /** Callback object for simulation calculation. */
-  Callback<controller>  cb1;
+  Callback<unit_tester>  cb1;
 
   /** Activity for simulation calculation. */
   ActivityCallback      do_calc;
@@ -100,7 +77,7 @@ public: // class name and trim/parameter tables
 
 public: // construction and further specification
   /** Constructor. Is normally called from scheme/the creation script. */
-  controller(Entity* e, const char* part, const PrioritySpec& ts);
+  unit_tester(Entity* e, const char* part, const PrioritySpec& ts);
 
   /** Continued construction. This is called after all script
       parameters have been read and filled in, according to the
@@ -112,7 +89,7 @@ public: // construction and further specification
   bool complete();
 
   /** Destructor. */
-  ~controller();
+  ~unit_tester();
 
   // add here the member functions you want to be called with further
   // parameters. These are then also added in the parameter table

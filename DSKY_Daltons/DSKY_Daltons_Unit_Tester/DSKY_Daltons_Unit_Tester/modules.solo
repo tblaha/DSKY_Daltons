@@ -2,8 +2,6 @@
 # on a specific machine
 # note that the comm-objects directories should not be listed here
 # example:
-# DSKY_Daltons_Controller/some-module
+# DSKY_Daltons_Unit_Tester/some-module
 
-DSKY_Daltons_Controller/controller 
-
-DSKY_Daltons_Controller/unit-tester 
+DSKY_Daltons_Unit_Tester/unit-tester 

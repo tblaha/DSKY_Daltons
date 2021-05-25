@@ -23,7 +23,7 @@
 // include the debug writing header. Warning and error messages
 // are on by default, debug and info can be selected by
 // uncommenting the respective defines
-//#define D_MOD
+#define D_MOD
 #define W_MOD
 //#define I_MOD
 #include <debug.h>
@@ -121,8 +121,8 @@ controller::controller(Entity* e, const char* part, const
   myControlPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimaryControls", part)),
   myControlSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondaryControls", part)),
 
-  mySwitchPrimaryEventReadToken(getId(), NameSet(getEntity(), "PrimarySwitches", part)),
-  mySwitchSecondaryEventReadToken(getId(), NameSet(getEntity(), "SecondarySwitches", part)),
+  mySwitchPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimarySwitches", part)),
+  mySwitchSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondarySwitches", part)),
   
   myVehicleStateStreamReadToken(getId(), NameSet(getEntity(), "vehicleState", part)),
   
@@ -130,7 +130,7 @@ controller::controller(Entity* e, const char* part, const
   
 
   // activity initialization
-  // myclock(),
+  myclock(),
   cb1(this, &_ThisModule_::doCalculation),
   do_calc(getId(), "takes stick inputs and current rates. Outputs thruster forces and engine thrust command", &cb1, ps)
 {
@@ -138,6 +138,7 @@ controller::controller(Entity* e, const char* part, const
 
   // connect the triggers for simulation
   do_calc.setTrigger( myControlPrimaryStreamReadToken );
+  //do_calc.setTrigger( myclock );
 
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
@@ -199,8 +200,8 @@ bool controller::isPrepared()
   // CHECK_TOKEN(w_somedata);
   CHECK_TOKEN(myControlPrimaryStreamReadToken);
   CHECK_TOKEN(myControlSecondaryStreamReadToken);
-  CHECK_TOKEN(mySwitchPrimaryEventReadToken);
-  CHECK_TOKEN(mySwitchSecondaryEventReadToken);
+  CHECK_TOKEN(mySwitchPrimaryStreamReadToken);
+  CHECK_TOKEN(mySwitchSecondaryStreamReadToken);
   CHECK_TOKEN(myVehicleStateStreamReadToken);
   CHECK_TOKEN(myThrusterForcesStreamWriteToken);
 
@@ -285,14 +286,14 @@ void controller::doCalculation(const TimeSpec& ts)
 
       //Reading from the primary control stream
       try {
-          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts);
+          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts-100);
           myRollRate = myControlPrimaryReader.data().ux;
           myPitchRate = myControlPrimaryReader.data().uy;
           myYawRate = myControlPrimaryReader.data().uz;
           myThrottle = myControlPrimaryReader.data().uc;
       }
       catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error @ " << ts );
+          W_MOD(classname << "PrimaryControls read had an error @ " << ts << e);
       }
 
       //Reading from the secondary control stream
@@ -300,12 +301,12 @@ void controller::doCalculation(const TimeSpec& ts)
           StreamReader<SecondaryControls> myControlSecondaryReader(myControlSecondaryStreamReadToken, ts);
       }
       catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error @ " << ts );
+          W_MOD(classname<< "Sec Ctrl This channel had an error @ " << ts );
       }
 
       //Reading from the primary switch event
       try {
-          EventReader<PrimarySwitches>mySwitchPrimaryReader(mySwitchPrimaryEventReadToken, ts);
+          StreamReader<PrimarySwitches>mySwitchPrimaryReader(mySwitchPrimaryStreamReadToken, ts);
       }
       catch (Exception& e) {
           W_MOD(classname<< "This channel had an error");
@@ -313,7 +314,7 @@ void controller::doCalculation(const TimeSpec& ts)
 
       //Reading from the secondary switch stream
       try {
-          EventReader<SecondarySwitches> mySwitchSecondaryReader(mySwitchSecondaryEventReadToken, ts);
+          StreamReader<SecondarySwitches> mySwitchSecondaryReader(mySwitchSecondaryStreamReadToken, ts);
       }
       catch (Exception& e) {
           W_MOD(classname<< "This channel had an error");

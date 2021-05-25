@@ -1,12 +1,12 @@
 /* ------------------------------------------------------------------   */
-/*      item            : controller.cxx
+/*      item            : unit_tester.cxx
         made by         : tblaha
         from template   : DusimeModuleTemplate.cxx
         template made by: Rene van Paassen
-        date            : Thu May 13 15:41:29 2021
+        date            : Sat May 22 20:22:15 2021
         category        : body file
         description     :
-        changes         : Thu May 13 15:41:29 2021 first version
+        changes         : Sat May 22 20:22:15 2021 first version
         template changes: 030401 RvP Added template creation comment
                           060512 RvP Modified token checking code
                           131224 RvP convert snap.data_size to
@@ -16,15 +16,14 @@
 */
 
 
-#define controller_cxx
+#define unit_tester_cxx
 // include the definition of the module class
-#include "controller.hxx"
+#include "unit-tester.hxx"
 
 // include the debug writing header. Warning and error messages
 // are on by default, debug and info can be selected by
 // uncommenting the respective defines
 #define D_MOD
-#define W_MOD
 //#define I_MOD
 #include <debug.h>
 
@@ -35,10 +34,10 @@
 #include <dusime.h>
 
 // class/module name
-const char* const controller::classname = "controller";
+const char* const unit_tester::classname = "unit-tester";
 
 // initial condition/trim table
-const IncoTable* controller::getMyIncoTable()
+const IncoTable* unit_tester::getMyIncoTable()
 {
   static IncoTable inco_table[] = {
     // enter pairs of IncoVariable and VarProbe pointers (i.e.
@@ -57,7 +56,7 @@ const IncoTable* controller::getMyIncoTable()
 }
 
 // parameters to be inserted
-const ParameterTable* controller::getMyParameterTable()
+const ParameterTable* unit_tester::getMyParameterTable()
 {
   static const ParameterTable parameter_table[] = {
     { "set-timing",
@@ -85,7 +84,7 @@ const ParameterTable* controller::getMyParameterTable()
 }
 
 // constructor
-controller::controller(Entity* e, const char* part, const
+unit_tester::unit_tester(Entity* e, const char* part, const
                        PrioritySpec& ps) :
   /* The following line initialises the SimulationModule base class.
      You always pass the pointer to the entity, give the classname and the
@@ -97,18 +96,9 @@ controller::controller(Entity* e, const char* part, const
      fill a snapshot, or to restore your state from a snapshot. Only
      applicable if you have no state. */
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
+  tester("TestLog.txt", getId(), getEntity(), part, classname),
 
   // initialize the data you need in your simulation
-  myRollRate(0.0f),
-  myPitchRate(0.0f),
-  myYawRate(0.0f),
-  myThrottle(0.0f),
-  myMx(0.0f),
-  myMy(0.0f),
-  myMz(0.0f),
-  myFx(0.0f),
-  myFy(0.0f),
-  myFz(0.0f),
 
   // initialize the data you need for the trim calculation
 
@@ -118,34 +108,24 @@ controller::controller(Entity* e, const char* part, const
   //           MyData::classname, 0, Channel::Events, Channel::ReadAllData),
   // w_mytoken(getId(), NameSet(getEntity(), MyData::classname, part),
   //           MyData::classname, "label", Channel::Continuous),
-  myControlPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimaryControls", part)),
-  myControlSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondaryControls", part)),
-
-  mySwitchPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimarySwitches", part)),
-  mySwitchSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondarySwitches", part)),
-  
-  myVehicleStateStreamReadToken(getId(), NameSet(getEntity(), "vehicleState", part)),
-  
-  myThrusterForcesStreamWriteToken(getId(), NameSet(getEntity(), "thrusterForces", part)),
-  
 
   // activity initialization
   myclock(),
   cb1(this, &_ThisModule_::doCalculation),
-  do_calc(getId(), "takes stick inputs and current rates. Outputs thruster forces and engine thrust command", &cb1, ps)
+  do_calc(getId(), "", &cb1, ps)
 {
   // do the actions you need for the simulation
 
   // connect the triggers for simulation
-  do_calc.setTrigger( myControlPrimaryStreamReadToken );
-  //do_calc.setTrigger( myclock );
+  do_calc.setTrigger( myclock );
+  //do_calc.setTrigger( ThrusterToken );
 
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
-  // trimCalculationCondition(/* fill in your trim triggering channels */);
+  //trimCalculationCondition(/* fill in your trim triggering channels */);
 }
 
-bool controller::complete()
+bool unit_tester::complete()
 {
   /* All your parameters have been set. You may do extended
      initialisation here. Return false if something is wrong. */
@@ -153,13 +133,13 @@ bool controller::complete()
 }
 
 // destructor
-controller::~controller()
+unit_tester::~unit_tester()
 {
   //
 }
 
 // as an example, the setTimeSpec function
-bool controller::setTimeSpec(const TimeSpec& ts)
+bool unit_tester::setTimeSpec(const TimeSpec& ts)
 {
   // a time span of 0 is not acceptable
   if (ts.getValiditySpan() == 0) return false;
@@ -177,7 +157,7 @@ bool controller::setTimeSpec(const TimeSpec& ts)
 }
 
 // and the checkTiming function
-bool controller::checkTiming(const std::vector<int>& i)
+bool unit_tester::checkTiming(const std::vector<int>& i)
 {
   if (i.size() == 3) {
     new TimingCheck(do_calc, i[0], i[1], i[2]);
@@ -192,18 +172,13 @@ bool controller::checkTiming(const std::vector<int>& i)
 }
 
 // tell DUECA you are prepared
-bool controller::isPrepared()
+bool unit_tester::isPrepared()
 {
   bool res = true;
 
   // Example checking a token:
   // CHECK_TOKEN(w_somedata);
-  CHECK_TOKEN(myControlPrimaryStreamReadToken);
-  CHECK_TOKEN(myControlSecondaryStreamReadToken);
-  CHECK_TOKEN(mySwitchPrimaryStreamReadToken);
-  CHECK_TOKEN(mySwitchSecondaryStreamReadToken);
-  CHECK_TOKEN(myVehicleStateStreamReadToken);
-  CHECK_TOKEN(myThrusterForcesStreamWriteToken);
+  check_test_tokens();
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
@@ -214,13 +189,13 @@ bool controller::isPrepared()
 }
 
 // start the module
-void controller::startModule(const TimeSpec &time)
+void unit_tester::startModule(const TimeSpec &time)
 {
   do_calc.switchOn(time);
 }
 
 // stop the module
-void controller::stopModule(const TimeSpec &time)
+void unit_tester::stopModule(const TimeSpec &time)
 {
   do_calc.switchOff(time);
 }
@@ -228,7 +203,7 @@ void controller::stopModule(const TimeSpec &time)
 // fill a snapshot with state data. You may remove this method (and the
 // declaration) if you specified to the SimulationModule that the size of
 // state snapshots is zero
-void controller::fillSnapshot(const TimeSpec& ts,
+void unit_tester::fillSnapshot(const TimeSpec& ts,
                               Snapshot& snap, bool from_trim)
 {
   // The most efficient way of filling a snapshot is with an AmorphStore
@@ -251,7 +226,7 @@ void controller::fillSnapshot(const TimeSpec& ts,
 // reload from a snapshot. You may remove this method (and the
 // declaration) if you specified to the SimulationModule that the size of
 // state snapshots is zero
-void controller::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
+void unit_tester::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
 {
   // access the data in the snapshot with an AmorphReStore object
   AmorphReStore s(snap.data, snap.getDataSize());
@@ -265,84 +240,23 @@ void controller::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
 // this routine contains the main simulation process of your module. You
 // should read the input channels here, and calculate and write the
 // appropriate output
-void controller::doCalculation(const TimeSpec& ts)
+void unit_tester::doCalculation(const TimeSpec& ts)
 {
+  bool hold = true;
+
   // check the state we are supposed to be in
   switch (getAndCheckState(ts)) {
   case SimulationState::HoldCurrent: {
-
     // only repeat the output, do not change the model state
+    
+    // only init the writers that trigger other modules, so that we can "honour the state change"...
+    //StreamWriter<PrimaryControls> PrimWriter(PrimToken, ts);
 
     break;
     }
 
   case SimulationState::Replay:
   case SimulationState::Advance: {
-
-
-      //
-      //READING FROM THE CHANNELS
-      //
-
-      //Reading from the primary control stream
-      try {
-          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts-100);
-          myRollRate = myControlPrimaryReader.data().ux;
-          myPitchRate = myControlPrimaryReader.data().uy;
-          myYawRate = myControlPrimaryReader.data().uz;
-          myThrottle = myControlPrimaryReader.data().uc;
-      }
-      catch (Exception& e) {
-          W_MOD(classname << "PrimaryControls read had an error @ " << ts << e);
-      }
-
-      //Reading from the secondary control stream
-      try {
-          StreamReader<SecondaryControls> myControlSecondaryReader(myControlSecondaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "Sec Ctrl This channel had an error @ " << ts );
-      }
-
-      //Reading from the primary switch event
-      try {
-          StreamReader<PrimarySwitches>mySwitchPrimaryReader(mySwitchPrimaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error");
-      }
-
-      //Reading from the secondary switch stream
-      try {
-          StreamReader<SecondarySwitches> mySwitchSecondaryReader(mySwitchSecondaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error");
-      }
-
-      //Reading from the vehicle
-      try {
-          StreamReader<vehicleState> myVehicleStateReader(myVehicleStateStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error @ " << ts );
-      }
-
-      //
-      //WRITING TO THE CHANNELS
-      //
-      
-      // Simple test calculations
-      myMx = myRollRate*1;
-      myMy = myPitchRate*1;
-      myMz = myYawRate*1;
-      
-      myFx = 0.0f;
-      myFy = 0.0f;
-      myFz = -myThrottle*1;
-
-
-
     // access the input
     // example:
     // try {
@@ -360,6 +274,7 @@ void controller::doCalculation(const TimeSpec& ts)
        it happens, forget about the try/catch blocks. */
 
     // do the simulation calculations, one step
+    hold = false;
 
     break;
     }
@@ -370,6 +285,8 @@ void controller::doCalculation(const TimeSpec& ts)
     throw CannotHandleState(getId(),GlobalId(), "state unhandled");
   }
 
+  perform_tests(ts, hold);
+
   // DUECA applications are data-driven. From the time a module is switched
   // on, it should produce data, so that modules "downstreams" are
   // activated
@@ -379,16 +296,6 @@ void controller::doCalculation(const TimeSpec& ts)
 
   // write the output into the output channel, using the stream writer
   // y.data().var1 = something; ...
-  StreamWriter<thrusterForces> myThrusterForcesWriter(myThrusterForcesStreamWriteToken,ts);
-  //Writing the moments to the thrusterForces channel
-  myThrusterForcesWriter.data().Mx = myMx;
-  myThrusterForcesWriter.data().My = myMy;
-  myThrusterForcesWriter.data().Mz = myMz;
-
-  //Writing the forces to the thrusterForces channel
-  myThrusterForcesWriter.data().Fx = myFx;
-  myThrusterForcesWriter.data().Fy = myFy;
-  myThrusterForcesWriter.data().Fz = myFz;
 
   if (snapshotNow()) {
     // keep a copy of the model state. Snapshot sending is done in the
@@ -399,7 +306,7 @@ void controller::doCalculation(const TimeSpec& ts)
   }
 }
 
-void controller::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
+void unit_tester::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 {
   // read the event equivalent of the input data
   // example
@@ -453,5 +360,5 @@ void controller::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 // Make a TypeCreator object for this module, the TypeCreator
 // will check in with the scheme-interpreting code, and enable the
 // creation of modules of this type
-static TypeCreator<controller> a(controller::getMyParameterTable());
+static TypeCreator<unit_tester> a(unit_tester::getMyParameterTable());
 

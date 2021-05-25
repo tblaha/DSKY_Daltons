@@ -1,0 +1,116 @@
+// DO NOT MODIFY THIS FILE as it will be overwritten at maketime by jinja templating
+// Modify the tests.hxx.jinja template instead
+// 
+// @author 2021 - Till Blaha
+
+#define DO_INSTANTIATE
+#include <dusime.h>
+USING_DUECA_NS;
+
+#include "comm-objects.h"
+#include <sstream>
+#include "tester.hxx"
+
+// redefining a macro to test tokens outside the sim-module class by just passing the missing data
+#define CHECK_TOKEN_BEUN(A, id, classname) \
+  if (! (A) .isValid() ) {                               \
+    W_MOD(id << '/' << classname                       \
+          << " channel token " #A " for channel "      \
+          << (A) .getName() << " not (yet) valid");               \
+    res = false; \
+  }
+
+using namespace std;
+
+class tests
+{
+private:
+   const char* const classname;
+
+public:
+   int _num_tests = {{ tests | length }};
+   int _test_id = 0;
+   bool _test_published {false};
+   bool _response_ready {false};
+   GlobalId globid{};
+
+
+   {% for ch in stream_output_channels -%}
+   StreamChannelReadToken<{{ ch.split('/')[-1] }}> {{ ch.split('/')[-1] }}Token;
+   {% endfor -%}
+   {% for ch in stream_input_channels -%}
+   StreamChannelWriteToken<{{ ch.split('/')[-1] }}> {{ ch.split('/')[-1] }}Token;
+   {% endfor %}
+
+public:
+   tests(const GlobalId& Id, const string Entity, const char *part, const char *classname_in) : 
+      classname(classname_in),
+      globid(Id),
+      {% for ch in stream_output_channels -%}
+         {{ ch.split('/')[-1] }}Token(Id, NameSet(Entity, "{{ ch.split('/')[-1] }}", part)),
+      {% endfor -%}
+      {% for ch in stream_input_channels -%}
+         {{ ch.split('/')[-1] }}Token(Id, NameSet(Entity, "{{ ch.split('/')[-1] }}", part)){% if not loop.last %},{% endif %}
+      {% endfor -%}
+   {
+
+   };
+
+   bool check_test_tokens() {
+      bool res = true;
+
+      {% for ch in stream_output_channels -%}
+         CHECK_TOKEN_BEUN({{ ch.split('/')[-1] }}Token, globid, classname);
+      {% endfor -%}
+      {% for ch in stream_input_channels -%}
+         CHECK_TOKEN_BEUN({{ ch.split('/')[-1] }}Token, globid, classname);
+      {% endfor %}
+      return res;
+   }
+
+public:
+   void write_test_data(const TimeSpec& ts, const int& test_id) {
+      {% for ch in stream_input_channels -%}
+      StreamWriter<{{ ch.split('/')[-1] }}> {{ ch.split('/')[-1] }}Writer({{ ch.split('/')[-1] }}Token, ts);
+      {% endfor %}
+
+      switch (test_id) {
+         {% for test in tests -%}
+         case {{ test.id }}:
+            {% for name, data in test.inputs.items() -%}
+               {{ name.split('.') | join("Writer.data().") }} = {{ data }};
+            {% endfor -%}
+            D_MOD("Published Test #{{ test.id }}");
+            break;
+         {% endfor -%}
+      }
+   };
+
+   bool evaluate_response() {
+      {% for ch in stream_output_channels -%}
+      StreamReaderLatest<{{ ch.split('/')[-1] }}> {{ ch.split('/')[-1] }}Reader({{ ch.split('/')[-1] }}Token);
+      {% endfor %}
+
+      bool running_bool = true;
+      switch (_test_id) {
+         {% for test in tests -%}
+         case {{ test.id }}:
+            {% for name, data in test.outputs.items() -%}
+               running_bool &= (abs({{ name.split('.') | join("Reader.data().") }} - {{ data[0] }}) < {{ data[1] }});
+            {% endfor -%}
+            break;
+         {% endfor -%}
+      }
+      return running_bool;
+   }
+
+   void generate_debug_info(stringstream& debug_info) {
+      {% for ch in stream_output_channels -%}
+      StreamReaderLatest<{{ ch.split('/')[-1] }}> {{ ch.split('/')[-1] }}Reader({{ ch.split('/')[-1] }}Token);
+      {% endfor %}
+      {% for out in debug_outputs -%}
+      debug_info << "{{ out }} = " << {{ out.split('.') | join("Reader.data().") }} << endl;
+      {% endfor -%}
+   }
+};
+
