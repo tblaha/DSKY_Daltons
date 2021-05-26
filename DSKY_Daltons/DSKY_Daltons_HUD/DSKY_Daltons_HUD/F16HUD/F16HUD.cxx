@@ -13,7 +13,7 @@
 */
 
 static const char c_id[] =
-"$Id: F16HUD.cxx,v 1.4 2021/05/20 09:34:20 tblaha Exp $";
+"$Id: F16HUD.cxx,v 1.6 2021/05/26 10:47:56 herwich Exp $";
 
 #define F16HUD_cxx
 // include the definition of the module class
@@ -23,6 +23,7 @@ static const char c_id[] =
 // error messages
 #define W_MOD
 #define E_MOD
+#define D_MOD
 #include <debug.h>
 
 // include additional files needed for your calculation here
@@ -193,6 +194,7 @@ bool F16HUD::isPrepared()
 
   // Example checking a token:
   CHECK_TOKEN(myvehicleStateReadToken);
+  D_MOD("CHECK TOKEN GOOD")
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());

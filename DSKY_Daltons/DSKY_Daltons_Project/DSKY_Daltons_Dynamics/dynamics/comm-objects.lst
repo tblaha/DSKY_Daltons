@@ -9,3 +9,7 @@ DSKY_Daltons_Project/comm-objects/thrusterForces.dco
 DSKY_Daltons_Project/comm-objects/terrainDataAtCurrentLocation.dco
 DSKY_Daltons_Project/comm-objects/initState.dco
 
+SimCourse2021/comm-objects/VehicleStateStream.dco
+SimCourse2021/comm-objects/InitialConditionsEvent.dco
+SimCourse2021/comm-objects/RespawnEvent.dco
+SimCourse2021/comm-objects/FuelRewardEvent.dco

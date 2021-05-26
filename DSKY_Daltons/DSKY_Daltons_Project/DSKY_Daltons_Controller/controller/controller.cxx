@@ -79,6 +79,17 @@ const ParameterTable* controller::getMyParameterTable()
     /* The table is closed off with NULL pointers for the variable
        name and MemberCall/VarProbe object. The description is used to
        give an overall description of the module. */
+       
+    { "Kp",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Kp),
+      "controller proportional gain"},
+    
+    { "Kd",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Kd),
+      "controller derivative gain"},
+    
     { NULL, NULL, "please give a description of this module"} };
 
   return parameter_table;
@@ -109,6 +120,8 @@ controller::controller(Entity* e, const char* part, const
   myFx(0.0f),
   myFy(0.0f),
   myFz(0.0f),
+  Kp(1.0f),
+  Kd(0.0f),
 
   // initialize the data you need for the trim calculation
 
@@ -333,13 +346,13 @@ void controller::doCalculation(const TimeSpec& ts)
       //
       
       // Simple test calculations
-      myMx = myRollRate*1;
-      myMy = myPitchRate*1;
-      myMz = myYawRate*1;
+      myMx = myRollRate*Kp;
+      myMy = myPitchRate*Kp;
+      myMz = myYawRate*Kp;
       
       myFx = 0.0f;
       myFy = 0.0f;
-      myFz = -myThrottle*1;
+      myFz = -myThrottle*Kp;
 
 
 

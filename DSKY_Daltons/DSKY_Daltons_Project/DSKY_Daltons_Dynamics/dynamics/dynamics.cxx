@@ -16,6 +16,7 @@
 */
 
 #define dynamics_cxx
+#define GROUP_NUMBER 2
 // include the definition of the module class
 #include "dynamics.hxx"
 
@@ -110,6 +111,12 @@ dynamics::dynamics(Entity* e, const char* part, const
   thrusterForcesReadToken(getId(), NameSet(getEntity(), "thrusterForces", part)),
   vehicleStateWriteToken(getId(), NameSet(getEntity(), "vehicleState", part)),
 
+  // Referee channels
+  refVehicleStateWriteToken(getId(), NameSet("VehicleStateStream://world"), "VehicleStateStream", "Team2", Channel::Continuous, Channel::OneOrMoreEntries),
+  initialConditionsEventReadToken(getId(), NameSet(getEntity(), "InitialConditionsEvent", part)),
+  respawnEventReadToken(getId(), NameSet(getEntity(), "RespawnEvent", part)),
+  fuelRewardEventReadToken(getId(), NameSet(getEntity(), "FuelRewardEvent", part)),
+
   // activity initialization
   // myclock(),
   cb1(this, &_ThisModule_::doCalculation),
@@ -121,13 +128,14 @@ dynamics::dynamics(Entity* e, const char* part, const
 
   this->vehicleStateData.xyz << 0, 0, 0;
   this->vehicleStateData.uvw << 0, 0, 0;
+  this->vehicleStateData.pqr << 0, 0, 0;
   //this->vehicleStateData.quat << 0, 0, 0; see .hxx
   this->vehicleStateData.thrust = 0;
   this->vehicleStateData.mass = 100;
   //this->vehicleStateData.lgDelta = { }; see .hxx
 
   // connect the triggers for simulation
-  do_calc.setTrigger(thrusterForcesReadToken);
+  do_calc.setTrigger(thrusterForcesReadToken || initialConditionsEventReadToken || respawnEventReadToken || fuelRewardEventReadToken);
 
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
@@ -188,7 +196,8 @@ bool dynamics::isPrepared()
   // Example checking a token:
   // CHECK_TOKEN(w_somedata);
   CHECK_TOKEN(vehicleStateWriteToken);
-
+  CHECK_TOKEN(refVehicleStateWriteToken);
+  
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
   // CHECK_CONDITION2(sometest, "some test failed");
@@ -254,39 +263,14 @@ void dynamics::doCalculation(const TimeSpec& ts)
   // check the state we are supposed to be in
   switch (getAndCheckState(ts)) {
     case SimulationState::HoldCurrent: {
-      // only repeat the output, do not change the model state
-
       break;
     }
     case SimulationState::Replay:
     case SimulationState::Advance: {
-      // access the input
-      // example:
-      // try {
-      //   DataReader<MyInput> u(input_token, ts);
-      //   throttle = u.data().throttle;
-      //   de = u.data().de; ....
-      // }
-      // catch(Exception& e) {
-      //   // strange, there is no input. Should I try to continue or not?
-      // }
-      /* The above piece of code shows a block in which you try to catch
-        error conditions (exceptions) to handle the case in which the input
-        data is lost. This is not always necessary, if you normally do not
-        foresee such a condition, and you don t mind being stopped when
-        it happens, forget about the try/catch blocks. */
-
-      // do the simulation calculations, one step
-      try {
-        StreamReader<thrusterForces> thrusterForcesReader(thrusterForcesReadToken, ts);
-        this->thrusterForcesData.F << thrusterForcesReader.data().Fx, thrusterForcesReader.data().Fy, thrusterForcesReader.data().Fz;
-        this->thrusterForcesData.M << thrusterForcesReader.data().Mx, thrusterForcesReader.data().My, thrusterForcesReader.data().Mz;
-      } 
-      catch (Exception& e) {
-        W_MOD(classname << ": Error while reading thrusterForces channel @ " << ts);
-        this->thrusterForcesData.F << 0, 0, 0;
-        this->thrusterForcesData.M << 0, 0, 0;
-      }
+      readInitialConditionsEvent(ts);
+      readRespawnEvent(ts);
+      readFuelRewardEvent(ts);
+      readThrusterForcesStream(ts);
       break;
     }
     default:
@@ -296,49 +280,10 @@ void dynamics::doCalculation(const TimeSpec& ts)
       throw CannotHandleState(getId(),GlobalId(), "state unhandled");
   }
 
-  // DUECA applications are data-driven. From the time a module is switched
-  // on, it should produce data, so that modules "downstreams" are
-  // activated
-  // access your output channel(s)
-  // example
-  // DataWriter<MyOutput> y(output_token, ts);
-
-  // write the output into the output channel, using the stream writer
-  // y.data().var1 = something; ...
-  StreamWriter<vehicleState> vehicleStateWriter(vehicleStateWriteToken, ts);
-  vehicleStateWriter.data().x = this->vehicleStateData.xyz(0);
-  vehicleStateWriter.data().y = this->vehicleStateData.xyz(1);
-  vehicleStateWriter.data().z = this->vehicleStateData.xyz(2);
-
-  vehicleStateWriter.data().u = this->vehicleStateData.uvw(0);
-  vehicleStateWriter.data().v = this->vehicleStateData.uvw(1);
-  vehicleStateWriter.data().w = this->vehicleStateData.uvw(2);
-
-  // see .hxx
-  // vehicleStateWriter.data().e0 = this->vehicleStateData.quat(0);
-  // vehicleStateWriter.data().ey = this->vehicleStateData.quat(1);
-  // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
-  // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
-
-  vehicleStateWriter.data().p = this->vehicleStateData.pqr(0);
-  vehicleStateWriter.data().q = this->vehicleStateData.pqr(1);
-  vehicleStateWriter.data().r = this->vehicleStateData.pqr(2);
-
-  vehicleStateWriter.data().mass = this->vehicleStateData.mass;
-  vehicleStateWriter.data().thrust = this->vehicleStateData.thrust;
-
-  // see .hxx
-  // vehicleStateWriter.data().lgDelta1 = this->vehicleStateData.lgDelta(0);
-  // vehicleStateWriter.data().lgDelta2 = this->vehicleStateData.lgDelta(1);
-  // vehicleStateWriter.data().lgDelta3 = this->vehicleStateData.lgDelta(2);
-  // vehicleStateWriter.data().lgDelta4 = this->vehicleStateData.lgDelta(2);
+  writeVehicleStateStream(ts);
+  writeRefVehicleStateStream(ts);
 
   if (snapshotNow()) {
-    // keep a copy of the model state. Snapshot sending is done in the
-    // sendSnapshot routine, later, and possibly at lower priority
-    // e.g.
-    // snapshot_state_variable1 = state_variable1; ...
-    // (or maybe if your state is very large, there is a cleverer way ...)
   }
 }
 
@@ -391,6 +336,160 @@ void dynamics::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
   // now return. The real results from the trim calculation, as you
   // specified them in the TrimTable, will now be collected and sent
   // off for processing.
+}
+
+void dynamics::readInitialConditionsEvent(const TimeSpec& ts) {
+  if(initialConditionsEventReadToken.getNumWaitingEvents(ts)) {
+    try {
+      EventReader<InitialConditionsEvent> initialConditionsEventReader(initialConditionsEventReadToken, ts);
+        if(initialConditionsEventReader.data().GroupNumber == GROUP_NUMBER) {
+          // Stream initializations
+          this->vehicleStateData.xyz << initialConditionsEventReader.data().x, initialConditionsEventReader.data().y, initialConditionsEventReader.data().z;
+          this->vehicleStateData.uvw << initialConditionsEventReader.data().u, initialConditionsEventReader.data().v, initialConditionsEventReader.data().w;
+          this->vehicleStateData.pqr << initialConditionsEventReader.data().p, initialConditionsEventReader.data().q, initialConditionsEventReader.data().r;
+          //this->vehicleStateData.??? << initialConditionsEventReader.data().phi, initialConditionsEventReader.data().theta, initialConditionsEventReader.data().psi;
+          this->vehicleStateData.mass = initialConditionsEventReader.data().fuel_mass;
+
+          // Self initializations
+          this->vehicleStateData.thrust = 0;
+        }
+    }
+    catch (Exception& e) {
+      W_MOD(classname << ": Error while reading InitialConditionsEvent!");
+    }
+  }
+
+  return;
+}
+
+void dynamics::readRespawnEvent(const TimeSpec& ts) {
+  if(respawnEventReadToken.getNumWaitingEvents(ts)) {
+    try {
+      EventReader<RespawnEvent> respawnEventReader(respawnEventReadToken, ts);
+      if(respawnEventReader.data().GroupNumber == GROUP_NUMBER) {
+        // Stream initializations
+        this->vehicleStateData.xyz << respawnEventReader.data().x, respawnEventReader.data().y, respawnEventReader.data().z;
+        this->vehicleStateData.uvw << respawnEventReader.data().u, respawnEventReader.data().v, respawnEventReader.data().w;
+        this->vehicleStateData.pqr << respawnEventReader.data().p, respawnEventReader.data().q, respawnEventReader.data().r;
+        //this->vehicleStateData.??? << respawnEventReader.data().phi, respawnEventReader.data().theta, respawnEventReader.data().psi;
+
+        // Self initializations
+        this->vehicleStateData.thrust = 0;
+      }
+    }
+    catch (Exception& e) {
+      W_MOD(classname << ": Error while reading RespawnEvent!");
+    }
+  }
+  
+  return;
+}
+
+void dynamics::readFuelRewardEvent(const TimeSpec& ts) {
+  if(fuelRewardEventReadToken.getNumWaitingEvents(ts)) {
+    try {
+      EventReader<FuelRewardEvent> fuelRewardEventReader(fuelRewardEventReadToken, ts);
+      if(fuelRewardEventReader.data().GroupNumber == GROUP_NUMBER) {
+        this->vehicleStateData.mass = this->vehicleStateData.mass + fuelRewardEventReader.data().fuel_reward;
+      }
+    }
+    catch (Exception& e) {
+      W_MOD(classname << ": Error while reading RespawnEvent!");
+    }
+  }
+
+  return;
+}
+
+void dynamics::readThrusterForcesStream(const TimeSpec& ts) {
+  try {
+    StreamReader<thrusterForces> thrusterForcesReader(thrusterForcesReadToken, ts);
+    this->thrusterForcesData.F << thrusterForcesReader.data().Fx, thrusterForcesReader.data().Fy, thrusterForcesReader.data().Fz;
+    this->thrusterForcesData.M << thrusterForcesReader.data().Mx, thrusterForcesReader.data().My, thrusterForcesReader.data().Mz;
+  } 
+  catch (Exception& e) {
+    W_MOD(classname << ": Error while reading thrusterForces channel @ " << ts);
+    this->thrusterForcesData.F << 0, 0, 0;
+    this->thrusterForcesData.M << 0, 0, 0;
+  }
+
+  return;
+}
+
+void dynamics::writeVehicleStateStream(const TimeSpec& ts) {
+  StreamWriter<vehicleState> vehicleStateWriter(vehicleStateWriteToken, ts);
+  vehicleStateWriter.data().x = this->vehicleStateData.xyz(0);
+  vehicleStateWriter.data().y = this->vehicleStateData.xyz(1);
+  vehicleStateWriter.data().z = this->vehicleStateData.xyz(2);
+
+  vehicleStateWriter.data().u = this->vehicleStateData.uvw(0);
+  vehicleStateWriter.data().v = this->vehicleStateData.uvw(1);
+  vehicleStateWriter.data().w = this->vehicleStateData.uvw(2);
+
+  // see .hxx
+  // vehicleStateWriter.data().e0 = this->vehicleStateData.quat(0);
+  // vehicleStateWriter.data().ey = this->vehicleStateData.quat(1);
+  // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
+  // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
+
+  vehicleStateWriter.data().p = this->vehicleStateData.pqr(0);
+  vehicleStateWriter.data().q = this->vehicleStateData.pqr(1);
+  vehicleStateWriter.data().r = this->vehicleStateData.pqr(2);
+
+  vehicleStateWriter.data().mass = this->vehicleStateData.mass;
+  vehicleStateWriter.data().thrust = this->vehicleStateData.thrust;
+
+  // see .hxx
+  // vehicleStateWriter.data().lgDelta1 = this->vehicleStateData.lgDelta(0);
+  // vehicleStateWriter.data().lgDelta2 = this->vehicleStateData.lgDelta(1);
+  // vehicleStateWriter.data().lgDelta3 = this->vehicleStateData.lgDelta(2);
+  // vehicleStateWriter.data().lgDelta4 = this->vehicleStateData.lgDelta(2);
+  
+  return;
+}
+
+void dynamics::writeRefVehicleStateStream(const TimeSpec& ts) {
+  StreamWriter<VehicleStateStream> refVehicleStateWriter(refVehicleStateWriteToken, ts);
+  refVehicleStateWriter.data().GroupNumber = GROUP_NUMBER;
+
+  refVehicleStateWriter.data().x = this->vehicleStateData.xyz(0);
+  refVehicleStateWriter.data().y = this->vehicleStateData.xyz(1);
+  refVehicleStateWriter.data().z = this->vehicleStateData.xyz(2);
+
+  refVehicleStateWriter.data().u = this->vehicleStateData.uvw(0);
+  refVehicleStateWriter.data().v = this->vehicleStateData.uvw(1);
+  refVehicleStateWriter.data().w = this->vehicleStateData.uvw(2);
+
+  refVehicleStateWriter.data().p = this->vehicleStateData.pqr(0);
+  refVehicleStateWriter.data().q = this->vehicleStateData.pqr(1);
+  refVehicleStateWriter.data().r = this->vehicleStateData.pqr(2);
+
+  // not implemented
+  // refVehicleStateWriter.data().phi = 
+  // refVehicleStateWriter.data().theta = 
+  // refVehicleStateWriter.data().psi = 
+
+  // see .hxx
+  // refVehicleStateWriter.data().q1 = this->vehicleStateData.quat(0);
+  // refVehicleStateWriter.data().q2 = this->vehicleStateData.quat(1);
+  // refVehicleStateWriter.data().q3 = this->vehicleStateData.quat(2);
+  // refVehicleStateWriter.data().q4 = this->vehicleStateData.quat(2);
+
+  refVehicleStateWriter.data().fuel_mass = this->vehicleStateData.mass;
+  refVehicleStateWriter.data().F_thruster = this->vehicleStateData.thrust;
+
+  // not implemented
+  // refVehicleStateWriter.data().T_x = 
+  // refVehicleStateWriter.data().T_y = 
+  // refVehicleStateWriter.data().T_z = 
+
+  // refVehicleStateWriter.data().x_LG = 
+  // refVehicleStateWriter.data().y_LG = 
+  // refVehicleStateWriter.data().z_LG = 
+  // refVehicleStateWriter.data().F_LG = 
+  // refVehivleStateWriter.data().Landing_gear_bool =
+   
+  return;
 }
 
 // Make a TypeCreator object for this module, the TypeCreator

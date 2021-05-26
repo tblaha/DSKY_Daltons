@@ -39,17 +39,23 @@ class controller: public SimulationModule
 
 private: // simulation data
   // declare the data you need in your simulation
+  // Input rates
   float myRollRate;
   float myPitchRate;
   float myYawRate;
   float myThrottle;
   
+  // Output Forces and Moments
   float myMx;
   float myMy;
   float myMz;
   float myFx;
   float myFy;
   float myFz;
+  
+  // Controller gains
+  float Kp;
+  float Kd;
 
 private: // trim calculation data
   // declare the trim calculation data needed for your simulation

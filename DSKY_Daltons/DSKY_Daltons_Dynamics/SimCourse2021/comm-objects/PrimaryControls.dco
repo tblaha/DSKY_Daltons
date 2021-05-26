@@ -1,0 +1,28 @@
+(Type float)
+(Type int)
+
+(EventAndStream PrimaryControls
+  (float ux (Default 0.0f))
+  (float uy (Default 0.0f))
+  (float uz (Default 0.0f))
+  (float uc (Default 0.0f))
+
+  (float Sx (Default 0.0f))
+  (float Sy (Default 0.0f))
+  (float Sz (Default 0.0f))
+  (float Sc (Default 0.0f))
+
+  (float dSx (Default 0.0f))
+  (float dSy (Default 0.0f))
+  (float dSz (Default 0.0f))
+  (float dSc (Default 0.0f))
+
+  (float Mx (Default 0.0f))
+  (float My (Default 0.0f))
+  (float Mz (Default 0.0f))
+  (float Mc (Default 0.0f))
+
+  (float fbrake_left (Default 0.0f))
+  (float fbrake_right (Default 0.0f))
+  (int test (Default 0))
+)

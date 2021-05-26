@@ -48,111 +48,124 @@ struct VehicleStateData {
     The instructions to create an module of this class from the Scheme
     script are:
 
-    \verbinclude dynamics.scm
+  \verbinclude dynamics.scm
 */
 class dynamics: public SimulationModule
 {
   /** self-define the module type, to ease writing the parameter table */
   typedef dynamics _ThisModule_;
 
-private: // simulation data
-  // declare the data you need in your simulation
-  Body body;
-  ThrusterForcesData thrusterForcesData;
-  VehicleStateData vehicleStateData;
+  private: // simulation data
+    // declare the data you need in your simulation
+    Body body;
+    ThrusterForcesData thrusterForcesData;
+    VehicleStateData vehicleStateData;
 
-private: // trim calculation data
-  // declare the trim calculation data needed for your simulation
+  private: // trim calculation data
+    // declare the trim calculation data needed for your simulation
 
-private: // snapshot data
-  // declare, if you need, the room for placing snapshot data
+  private: // snapshot data
+    // declare, if you need, the room for placing snapshot data
 
-private: // channel access
-  // declare access tokens for all the channels you read and write
-  // examples:
-  // ChannelReadToken    r_mytoken;
-  // ChannelWriteToken   w_mytoken;
-  StreamChannelReadToken<thrusterForces> thrusterForcesReadToken;
-  StreamChannelWriteToken<vehicleState> vehicleStateWriteToken;
+  private: // channel access
+    // declare access tokens for all the channels you read and write
+    // examples:
+    // ChannelReadToken    r_mytoken;
+    // ChannelWriteToken   w_mytoken;
+    StreamChannelReadToken<thrusterForces> thrusterForcesReadToken;
+    StreamChannelWriteToken<vehicleState> vehicleStateWriteToken;
 
-private: // activity allocation
-  /** You might also need a clock. Don't mis-use this, because it is
-      generally better to trigger on the incoming channels */
-  //PeriodicAlarm        myclock;
+    // Referee channels
+    StreamChannelWriteToken<VehicleStateStream> refVehicleStateWriteToken;
+    EventChannelReadToken<InitialConditionsEvent> initialConditionsEventReadToken;
+    EventChannelReadToken<RespawnEvent> respawnEventReadToken;
+    EventChannelReadToken<FuelRewardEvent> fuelRewardEventReadToken;
 
-  /** Callback object for simulation calculation. */
-  Callback<dynamics>  cb1;
+  private: // activity allocation
+    /** You might also need a clock. Don't mis-use this, because it is
+        generally better to trigger on the incoming channels */
+    //PeriodicAlarm        myclock;
 
-  /** Activity for simulation calculation. */
-  ActivityCallback      do_calc;
+    /** Callback object for simulation calculation. */
+    Callback<dynamics> cb1;
 
-public: // class name and trim/parameter tables
-  /** Name of the module. */
-  static const char* const           classname;
+    /** Activity for simulation calculation. */
+    ActivityCallback do_calc;
 
-  /** Return the initial condition table. */
-  static const IncoTable*            getMyIncoTable();
+  public: // class name and trim/parameter tables
+    /** Name of the module. */
+    static const char* const classname;
 
-  /** Return the parameter table. */
-  static const ParameterTable*       getMyParameterTable();
+    /** Return the initial condition table. */
+    static const IncoTable* getMyIncoTable();
 
-public: // construction and further specification
-  /** Constructor. Is normally called from scheme/the creation script. */
-  dynamics(Entity* e, const char* part, const PrioritySpec& ts);
+    /** Return the parameter table. */
+    static const ParameterTable* getMyParameterTable();
 
-  /** Continued construction. This is called after all script
-      parameters have been read and filled in, according to the
-      parameter table. Your running environment, e.g. for OpenGL
-      drawing, is also prepared. Any lengty initialisations (like
-      reading the 4 GB of wind tables) should be done here.
-      Return false if something in the parameters is wrong (by
-      the way, it would help if you printed what!) May be deleted. */
-  bool complete();
+  public: // construction and further specification
+    /** Constructor. Is normally called from scheme/the creation script. */
+    dynamics(Entity* e, const char* part, const PrioritySpec& ts);
 
-  /** Destructor. */
-  ~dynamics();
+    /** Continued construction. This is called after all script
+        parameters have been read and filled in, according to the
+        parameter table. Your running environment, e.g. for OpenGL
+        drawing, is also prepared. Any lengty initialisations (like
+        reading the 4 GB of wind tables) should be done here.
+        Return false if something in the parameters is wrong (by
+        the way, it would help if you printed what!) May be deleted. */
+    bool complete();
 
-  // add here the member functions you want to be called with further
-  // parameters. These are then also added in the parameter table
-  // The most common one (addition of time spec) is given here.
-  // Delete if not needed!
+    /** Destructor. */
+    ~dynamics();
 
-  /** Specify a time specification for the simulation activity. */
-  bool setTimeSpec(const TimeSpec& ts);
+    // add here the member functions you want to be called with further
+    // parameters. These are then also added in the parameter table
+    // The most common one (addition of time spec) is given here.
+    // Delete if not needed!
 
-  /** Request check on the timing. */
-  bool checkTiming(const std::vector<int>& i);
+    /** Specify a time specification for the simulation activity. */
+    bool setTimeSpec(const TimeSpec& ts);
 
-public: // member functions for cooperation with DUECA
-  /** indicate that everything is ready. */
-  bool isPrepared();
+    /** Request check on the timing. */
+    bool checkTiming(const std::vector<int>& i);
 
-  /** start responsiveness to input data. */
-  void startModule(const TimeSpec &time);
+  public: // member functions for cooperation with DUECA
+    /** indicate that everything is ready. */
+    bool isPrepared();
 
-  /** stop responsiveness to input data. */
-  void stopModule(const TimeSpec &time);
+    /** start responsiveness to input data. */
+    void startModule(const TimeSpec &time);
 
-public: // the member functions that are called for activities
-  /** the method that implements the main calculation. */
-  void doCalculation(const TimeSpec& ts);
+    /** stop responsiveness to input data. */
+    void stopModule(const TimeSpec &time);
 
-public: // member functions for cooperation with DUSIME
-  /** For the Snapshot capability, fill the snapshot "snap" with the
-      data saved at a point in your simulation (if from_trim is false)
-      or with the state data calculated in the trim calculation (if
-      from_trim is true). */
-  void fillSnapshot(const TimeSpec& ts,
-                    Snapshot& snap, bool from_trim);
+  public: // the member functions that are called for activities
+    /** the method that implements the main calculation. */
+    void doCalculation(const TimeSpec& ts);
 
-  /** Restoring the state of the simulation from a snapshot. */
-  void loadSnapshot(const TimeSpec& t, const Snapshot& snap);
+  public: // member functions for cooperation with DUSIME
+    /** For the Snapshot capability, fill the snapshot "snap" with the
+        data saved at a point in your simulation (if from_trim is false)
+        or with the state data calculated in the trim calculation (if
+        from_trim is true). */
+    void fillSnapshot(const TimeSpec& ts, Snapshot& snap, bool from_trim);
 
-  /** Perform a trim calculation. Should NOT use current state
-      uses event channels parallel to the stream data channels,
-      calculates, based on the event channel input, the steady state
-      output. */
-  void trimCalculation(const TimeSpec& ts, const TrimMode& mode);
+    /** Restoring the state of the simulation from a snapshot. */
+    void loadSnapshot(const TimeSpec& t, const Snapshot& snap);
+
+    /** Perform a trim calculation. Should NOT use current state
+        uses event channels parallel to the stream data channels,
+        calculates, based on the event channel input, the steady state
+        output. */
+    void trimCalculation(const TimeSpec& ts, const TrimMode& mode);
+
+  private:
+    void readInitialConditionsEvent(const TimeSpec& ts);
+    void readRespawnEvent(const TimeSpec& ts);
+    void readFuelRewardEvent(const TimeSpec& ts);
+    void readThrusterForcesStream(const TimeSpec& ts);
+    void writeVehicleStateStream(const TimeSpec& ts);
+    void writeRefVehicleStateStream(const TimeSpec& ts);
 };
 
 #endif
