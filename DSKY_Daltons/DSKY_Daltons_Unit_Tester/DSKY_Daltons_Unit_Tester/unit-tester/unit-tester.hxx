@@ -51,6 +51,9 @@ private: // tester stuff
 
   ofstream _logfile {};
   stringstream _logtext {};
+  float _time_passed_since_published {0};
+  float _time_passed_since_last_log {0};
+  stringstream debug_info {};
 
   void document_test(const string desc, const bool& pass, const stringstream& debug_info, const TimeSpec& ts) {
       //_logtext << ts.getUsecsElapsed();
@@ -68,7 +71,11 @@ private: // tester stuff
       // if we are in hold: act like we didn't publish yet, so don't transition
       // to reading any reponses (there won't be any)
       _test_published = true;
-      _response_ready = true; // for now, maybe wait a defined amount if iterations
+      _response_ready = false;
+      _time_passed_since_published = 0;
+      _time_passed_since_last_log = 0;
+
+      debug_info = stringstream();
       
       write_test_data(ts, _test_id);
     } else {
@@ -76,8 +83,7 @@ private: // tester stuff
         string desc;
         bool test_passed = evaluate_response(desc);
 
-        stringstream debug_info {};
-        generate_debug_info(debug_info);
+        //generate_debug_info(debug_info);
         document_test(desc, test_passed, debug_info, ts);
 
         if (test_passed) {
@@ -91,8 +97,28 @@ private: // tester stuff
 
         _test_id++;
       }
-      // write default data if not currently performing a test 
-      write_test_data(ts, -1);
+      if (_test_published && !_response_ready) {
+        _time_passed_since_published += ts.getDtInSeconds();
+        _time_passed_since_last_log += ts.getDtInSeconds();
+
+        if (_time_passed_since_published >= _test_wait) {
+          _response_ready = true;
+          write_test_data(ts, -1);
+        } else {
+          write_test_data(ts, _test_id);
+        }
+        if (_time_passed_since_last_log >= _log_every_seconds) {
+          stringstream intermediate_debug_info {};
+          generate_debug_info(intermediate_debug_info);
+          debug_info << "Delta t: " << _time_passed_since_published << "sec" << endl;
+          debug_info << intermediate_debug_info.str();
+          _time_passed_since_last_log = 0;
+        }
+
+      } else { 
+        // write default data if not currently performing a test 
+        write_test_data(ts, -1);
+      }
     }
 
   };

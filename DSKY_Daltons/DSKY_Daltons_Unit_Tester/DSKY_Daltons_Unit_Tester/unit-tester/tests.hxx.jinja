@@ -30,6 +30,8 @@ private:
 public:
    int _num_tests = {{ tests | length }};
    int _test_id = 0;
+   float _test_wait = 0;
+   float _log_every_seconds = 0;
    bool _test_published {false};
    bool _response_ready {false};
    GlobalId globid{};
@@ -52,9 +54,9 @@ public:
       {% for ch in stream_input_channels -%}
          {{ ch.split('/')[-1].split('.')[0] }}Token(Id, NameSet(Entity, "{{ ch.split('/')[-1].split('.')[0] }}", part)){% if not loop.last %},{% endif %}
       {% endfor -%}
-   {
+      {
 
-   };
+      };
 
    bool check_test_tokens() {
       bool res = true;
@@ -70,13 +72,15 @@ public:
 
 public:
    void write_test_data(const TimeSpec& ts, const int& test_id) {
-      {% for ch in stream_input_channels -%}
-      StreamWriter<{{ ch.split('/')[-1].split('.')[0] }}> {{ ch.split('/')[-1].split('.')[0] }}Writer({{ ch.split('/')[-1].split('.')[0] }}Token, ts);
+      {% for ch, delay in stream_input_channels.items() -%}
+      StreamWriter<{{ ch.split('/')[-1].split('.')[0] }}> {{ ch.split('/')[-1].split('.')[0] }}Writer({{ ch.split('/')[-1].split('.')[0] }}Token, ts + {{ delay }});
       {% endfor %}
 
       switch (test_id) {
          {% for test in tests -%}
          case {{ test.id }}:
+            _test_wait = {{ test.wait_seconds | default(0, true) }};
+            _log_every_seconds = {{ test.log_every_seconds | default(0, true) }};
             {% for name, data in test.inputs.items() -%}
                {{ name.split('.') | join("Writer.data().") }} = {{ data }};
             {% endfor -%}
