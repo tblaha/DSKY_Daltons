@@ -97,8 +97,8 @@ Verify that `tree -L 4` gives the following output (of course,`controller` shoul
 
 1. When you start working, make sure you have a backup (see last point), then go to `cd <myPath> DSKY_Daltons_<myModule>/DSKY_Daltons_<myModule>/` and do a `dueca-project update`
 
-2. *never* change or add any `.dco` files anywhere inside `DSKY_Daltons_<myModule>/DSKY_Daltons_<myModule>/`
-    - instead, we want to keep them centralized in the `DSKY_Daltons_Project`. Ask Till to fix shit for you, if broken.
+2. only add `.dco` files inside `DSKY_Daltons_<myModule>/DSKY_Daltons_<myModule>/`, if you _do not_ intent them to be used by other subprojects. It is fine to add some for testing purposes (for example with another "signal generator" or "tester" module that is exclusive to your subproject), but make sure that the module that is borrowed by the main `DSKY_Daltons_Project` does not fail, if nothing is written to these `.dco`s, because your tester module is not actually run.
+    - instead, we want to keep the `.dco`s that are used for the actual simulation centralized in the `DSKY_Daltons_Project`. Ask Till to fix shit for you, if broken.
 
 3. *never* modify the `DSKY_Daltons_<myModule>/DSKY_Daltons_<myModule>/comm-objects/comm-objects.lst`!
     - modify the `DSKY_Daltons_<myModule>/DSKY_Daltons_<myModule>/<myModule>/comm-objects/comm-objects.lst` instead.
