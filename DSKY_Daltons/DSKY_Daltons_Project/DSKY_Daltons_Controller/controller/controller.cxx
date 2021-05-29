@@ -85,12 +85,22 @@ const ParameterTable* controller::getMyParameterTable()
     { "Kp",
       new VarProbe<_ThisModule_,float >
       (&_ThisModule_::Kp),
-      "controller proportional gain"},
+      "Rate controller proportional gain"},
     
     { "Kd",
       new VarProbe<_ThisModule_,float >
       (&_ThisModule_::Kd),
-      "controller derivative gain"},
+      "Rate controller derivative gain"},
+    
+    { "Tp",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Tp),
+      "Thrust controller proportional gain"},
+    
+    { "z_ref_mult",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::z_ref_mult),
+      "vertical rate reference multiplier"},
     
     { NULL, NULL, "please give a description of this module"} };
 
@@ -162,6 +172,8 @@ controller::controller(Entity* e, const char* part, const
   prev_pout(0.0f),
   prev_qout(0.0f),
   prev_rout(0.0f),
+
+  maxThrusterMoment(3300.0f),
 
   // initialize the data you need for the trim calculation
 
@@ -409,14 +421,14 @@ void controller::doCalculation(const TimeSpec& ts)
       //
       
       // Feedback loop
-      ep = myp - myRollRate;
-      eq = myq - myPitchRate;
-      er = myr - myYawRate;
+      ep = myRollRate - myp;
+      eq = myPitchRate - myq;
+      er = myYawRate - myr;
       
       // Proportional part
-      Pp = -Kp*ep;
-      Pq = -Kp*eq;
-      Pr = -Kp*er;
+      Pp = Kp*ep;
+      Pq = Kp*eq;
+      Pr = Kp*er;
       
       // Derivative part
       Dp = Kd*P;
@@ -424,9 +436,9 @@ void controller::doCalculation(const TimeSpec& ts)
       Dr = Kd*R;
       
       // Controller output
-      myMx = clamp(Ixx * (Pp+Dp), -4*700.0f, 4*700.0f);
-      myMy = clamp(Iyy * (Pq+Dq), -4*700.0f, 4*700.0f);
-      myMz = clamp(Izz * (Pr+Dr), -4*750.0f, 4*750.0f);
+      myMx = clamp(Ixx * (Pp+Dp), -maxThrusterMoment, maxThrusterMoment);
+      myMy = clamp(Iyy * (Pq+Dq), -maxThrusterMoment, maxThrusterMoment);
+      myMz = clamp(Izz * (Pr+Dr), -maxThrusterMoment, maxThrusterMoment);
       
       // Moments
       //myMx = Ixx*P;
@@ -451,7 +463,7 @@ void controller::doCalculation(const TimeSpec& ts)
       nI = myquat * nB;
       mu = (std::abs(nI[2]) < 0.1) ? std::copysign(0.1f, nI[2]) : nI[2];
 
-      float T_raw = mass / mu * ( zdot_P * (-gen_z_dot_ref(myThrottle) + myInertialVel[2]) + gM);
+      float T_raw = mass / mu * ( Tp * (-gen_z_dot_ref(myThrottle) + myInertialVel[2]) + gM);
 
       myFz = -clamp( T_raw, T_max*t_limits[0], T_max*t_limits[1] );
 

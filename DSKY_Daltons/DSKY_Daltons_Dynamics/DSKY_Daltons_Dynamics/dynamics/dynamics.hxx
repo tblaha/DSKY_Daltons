@@ -39,6 +39,9 @@ struct VehicleStateData {
   Vector3d xyz;
   Vector3d uvw;
   Quaterniond quat;
+  float phi;
+  float theta;
+  float psi;
   Vector3d pqr;
   float thrust;
   float mass;
@@ -62,6 +65,7 @@ class dynamics: public SimulationModule
     RigidBody body;
     RungeKuttaWorkspace workspace;
     Vector3d gravity;
+    Vector3d thursterLocation;
 
     // Channel structs
     ThrusterForcesData thrusterForcesData;
@@ -80,6 +84,7 @@ class dynamics: public SimulationModule
     // ChannelWriteToken   w_mytoken;
     StreamChannelReadToken<thrusterForces> thrusterForcesReadToken;
     StreamChannelWriteToken<vehicleState> vehicleStateWriteToken;
+    StreamChannelWriteToken<ObjectMotion> ObjectMotionWriteToken;
 
     // Referee channels
     StreamChannelWriteToken<VehicleStateStream> refVehicleStateWriteToken;
@@ -172,11 +177,13 @@ class dynamics: public SimulationModule
     void readThrusterForcesStream(const TimeSpec& ts);
     void writeVehicleStateStream(const TimeSpec& ts);
     void writeRefVehicleStateStream(const TimeSpec& ts);
+    void writeObjectMotionStream(const TimeSpec& ts);
   public:
     void derivative(VectorE& xd, double dt);
     const Vector& X() const;
     void setState(const VectorE& newx);
     void bodyStep(const TimeSpec& ts);
+    void bodySetStateToCurrentData();
 };
 
 #endif

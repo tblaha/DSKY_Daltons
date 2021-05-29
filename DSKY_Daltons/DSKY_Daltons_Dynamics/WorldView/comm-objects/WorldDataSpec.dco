@@ -1,0 +1,32 @@
+; -*-scheme-*-
+(Header "
+        item            : WorldDataSpec.dco
+        made by         : Rene' van Paassen
+        date            : 1612xx
+        description     : WorldData specifications for WorldView
+        copyright       : (c) 2016 TUDelft-AE-C&S")
+
+(Type vstring "#include <stringoptions.h>")
+(IterableType std::vector<double> "#include <vector>")
+(IterableType std::vector<vstring> "
+#include <vector>
+#include <stringoptions.h>")
+
+;; Helper struct that defines the parameters for a view
+(Event WorldDataSpec
+       (IncludeFile WorldDataSpecExtra)
+
+       ;; Name for the object
+       (vstring name (Default ""))
+
+       ;; Type, determines behavior of the object 
+       (vstring type (Default "General"))
+       
+       ;; File names, for possibly a number of files to read the model,
+       ;; or any other specification caught in character strings
+       (std::vector<vstring> filename)
+       
+       ;; Position, x, y, z coordinates and/or Orientation, phi, theta,
+       ;; psi Euler angles, or anything else that the application might fancy
+       (std::vector<double> coordinates)
+       )

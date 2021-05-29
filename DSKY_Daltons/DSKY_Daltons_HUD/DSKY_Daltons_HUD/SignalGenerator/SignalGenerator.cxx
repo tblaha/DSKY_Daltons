@@ -98,16 +98,6 @@ SignalGenerator::SignalGenerator(Entity* e, const char* part, const
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
 
   // initialize the data you need in your simulation
-  
-  // this->thrusterForcesData.F << 0, 0, 0; // first vehicleState implementation only
-  // this->thrusterForcesData.M << 0, 0, 0; // idem.
-
-  //vehicleStateData.xyz(0. , 0. , 0.),
-  //this->vehicleStateData.uvw << 0, 0, 0;
-  //this->vehicleStateData.pqr << 0, 0, 0;
-  //this->vehicleStateData.quat << 0, 0, 0; see .hxx                                                 
-  //this->vehicleStateData.thrust = 0;
-  //this->vehicleStateData.mass = 100;
 
   // initialize the data you need for the trim calculation
 
@@ -117,7 +107,6 @@ SignalGenerator::SignalGenerator(Entity* e, const char* part, const
   //           MyData::classname, 0, Channel::Events, Channel::ReadAllData),
   // w_mytoken(getId(), NameSet(getEntity(), MyData::classname, part),
   //           MyData::classname, "label", Channel::Continuous),
-  vehicleStateWriteToken(getId(), NameSet(getEntity(), "vehicleState", part)),
 
   // activity initialization
   myclock(),
@@ -187,7 +176,6 @@ bool SignalGenerator::isPrepared()
 
   // Example checking a token:
   // CHECK_TOKEN(w_somedata);
-  CHECK_TOKEN(vehicleStateWriteToken);
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
@@ -279,6 +267,7 @@ void SignalGenerator::doCalculation(const TimeSpec& ts)
 
     // do the simulation calculations, one step
 
+
     break;
     }
   default:
@@ -306,6 +295,8 @@ void SignalGenerator::doCalculation(const TimeSpec& ts)
     // (or maybe if your state is very large, there is a cleverer way ...)
   }
 }
+
+
 
 void SignalGenerator::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 {

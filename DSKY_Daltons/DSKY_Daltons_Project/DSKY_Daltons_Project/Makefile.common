@@ -12,6 +12,8 @@
 # LIBRARIES TO LINK IN WITH YOUR PROGRAM
 #
 # =========================================================================
+#OpenSceneGraph
+OSGLIBS = -losgViewer -losg -losgDB -losgUtil -losgText
 
 # script choice, python is now default, comment out to get scheme
 SCRIPTCHOICE = --python
@@ -26,7 +28,7 @@ COMMON_INCLUDES =
 # specify which extra libs need to be included in the app
 # all dueca's stuff is already handled by the DCOMPONENTS and 
 # dueca-config
-EXTRALIBS = -lGL -lGLU -lGLEW -lglut
+EXTRALIBS = $(OSGLIBS) -lGL -lGLU -lGLEW -lglut
 
 # A second batch of extra libraries can be specified. This batch is 
 # included *after* all dueca's libs

@@ -70,20 +70,189 @@ if this_node_id == ecs_node:
 # modules for your project (example)
 mymods = []
 
+use_gui_stick = True;
+use_WorldView = False;
+
 gamma = 0.25;  # curve parameter for exponential input curve. see https://www.desmos.com/calculator/ekbtvpdhfy
 
 if this_node_id == ecs_node:
-    # mymods.append(dueca.Module(
-    #     "some-module-i-created", "", sim_priority).param(
-    #         set_timing = sim_timing,
-    #         check_timing = (10000, 20000)))
+    if use_gui_stick:
+        mymods.append(dueca.Module(
+            "gui-stick", "", admin_priority).param(
+                set_timing = sim_timing,
+                check_timing = (10000, 20000),
+                primary_controls = True,
+                primary_switches = True,
+                secondary_controls = True,
+                secondary_switches = True))
+
+    else:
+        mymods.append(dueca.Module('multi-stick', "", sim_priority).param(
+        set_timing = sim_timing,
+        # Supply a time specification to define the update rate of the main activity
+        check_timing = (10000, 20000),
+        # Supply three integer parameters to specify a check on the timing of
+        # the main activity: warning limit (in us), critical limit (in us), and
+        # the number of loops to test before sending a report (optional, dflt=2000)
+        use_primary = True,
+        # Output data on the "PrimaryControls" channel
+        use_secondary = True,
+        # Output data on the "SecondaryControls" channel
+        use_primary_switches = True,
+        # Output data on the "PrimarySwitches" channel
+        use_secondary_switches = True,
+        # Output data on the "SecondarySwitches" channel
+        set_device = "/dev/input/js1",
+        # Supply the path to a joystick device. Multiple devices may be added
+        # the result will be one logical device with a number of axes and
+        # buttons
+        add_link = dueca.MultiStickValue().param(
+            name = "ux",
+            read_axis = 3,
+            # a0 + a1 x + a2 x^2 etc.
+            # nice exponential scaling, see https://www.desmos.com/calculator/ekbtvpdhfy
+            calibration_polynomial = (0.0, gamma, 0.0, 0.0, 0.0, 1-gamma),
+        ),
+        ).param( # repeated arguments
+        add_link = dueca.MultiStickValue().param(
+            name = "uy",
+            read_axis = 2,
+            calibration_polynomial = (0.0, gamma, 0.0, 0.0, 0.0, 1-gamma),
+        ),
+        ).param( # repeated arguments
+        add_link = dueca.MultiStickValue().param(
+            name = "uz",
+            read_axis = 0,
+            calibration_polynomial = (0.0, gamma, 0.0, 0.0, 0.0, 1-gamma),
+        ),
+        ).param( # repeated arguments
+        add_link = dueca.MultiStickValue().param(
+            name = "uc",
+            read_axis = 1,
+            # offset by 0.5 (such that stick down in 0 collective) and invert (for some reason that is needed)
+            # NOTE: the calibration polynomial means we have fine control over 0.3-0.7 and only very rudimentary
+            #       control over the 0-0.3 and 0.7-1 range! May need to reduce gamma for this!
+            calibration_polynomial = (0.5, -0.5*gamma, 0.0, 0.0, 0.0, -0.5+0.5*gamma),
+        ),
+        ).param( # repeated arguments
+        add_link = dueca.MultiStickValue().param(
+            name = "AT_disconnect",
+            # identifying name for the stick value reader
+            read_button = 3,
+            # read off a button from the joystick, and use it as a truth value
+            # Give the button number as argument
+        ),
+        ).param( # repeated arguments
+        add_link = dueca.MultiStickValue().param(
+            name = "AP_disconnect",
+            # identifying name for the stick value reader
+            create_counter = (1,0),
+            set_counter_up = dueca.MultiStickValue().param(
+                read_button = 6),
+            set_counter_down = dueca.MultiStickValue().param(
+                read_button = 4),
+            calibration_steps = (0,0, 1,1),
+        ),
+        ).param( # repeated arguments
+        add_link = dueca.MultiStickValue().param(
+            name = "flap_setting",
+            # identifying name for the stick value reader
+            create_counter = (4,0),
+            # create a counting device. Supply the following integer values:
+            #  * a (positive) integer number for the maximum count
+            #  * a (nonnegative) integer number for center (init) value (optional)
+            #  * a time value (in DUECA increments) for initial repeat action (opt)
+            #  * a time value for subsequent repeat actions (opt)
+            # You must also indicate how the counter is supposed to be driven,
+            # by creating stick-value objects that are set up with
+            # either read-button or read-criterion objects, attach them with
+            # 'set-counter-up, 'set-counter-down and optionally 'center-counter.
+            set_counter_up = dueca.MultiStickValue().param(
+                read_button = 7),
+            # provide a logical stick value that drives up counting
+            set_counter_down = dueca.MultiStickValue().param(
+                read_button = 5),
+            # provide a logical stick value that drives down counting
+            calibration_steps = (0,1, 1,2, 2,3, 3,4, 4,5),
+            # provide 'choice' steps for calibration, give input, output pairs
+            # u0, y0, u1, y1 etc. Finds u closest to input value, returns
+            # corresponding output value
+        ),
+        
+        # Supply a stick-value object that will convert one or more of the
+        # stick's inputs to the control inputs. Remember to supply a name for
+        # this stick value that matches one of the input names
+        set_usb_priority = admin_priority,
+        # Supply a (preferably dedicated) priority for the USB reading.
+        ))
+
+    if use_WorldView:
+        mymods.append(dueca.Module(
+        "world-view","",admin_priority).param(
+            #module settings
+            set_timing = display_timing,
+            check_timing = (10000, 20000),
+            claim_thread = False,
+            restore_context = False,
+            predict_dt = 0.0,
+            predict_dt_max = 0.0,
+            initial_camera = (0.0,0.0,-10.0,0.0,0.0,0.0),
+            add_world_information_channel =
+            ("ObjectMotion://world","HUDData://PHLAB"),
+            #viewer backend, with its settings
+                set_viewer     = dueca.OSGViewer().param(
+                set_resourcepath   = "models",
+                keep_cursor        = True,
+
+                #first main windows
+                add_window          = "main window",
+                window_size_pos     = (400, 300, 0, 0),
+                window_x_screen     = "OpenSceneGraph Viewer",
+                add_viewport        = "main viewport",
+                viewport_pos_size   = (0, 0, 400, 300),
+                viewport_window     = "main window",
+                eye_offset          = (0, 0, 0, 0, 0, 0)).param(
+
+                #second window for testing
+                add_window          = "secondary window",
+                window_size_pos     = (200, 150, 0, 300),
+                add_viewport        = "secondary viewport",
+                viewport_pos_size   = (0, 0, 200, 150),
+                viewport_window     = "secondary window").param(
+
+                #objects in the scene
+                # 1) terrain
+                add_object_class_data = ("static:world", "world",
+                 "static", "lz.osg"),
+                add_object_class_coordinates = (0.0, 0.0, 0.0),
+                static_object         = ("static:world","world")).param(
+
+                # 2) sun
+                add_object_class_data = ("static:sunlight", "sunlight",
+                "static-light"),
+                add_object_class_coordinates = (0.08, 0.08, 0.08, 1,
+                 0.08, 0.08, 0.08, 1, 0.0, 0.0, 0.0, 1, 0.4, 0.0, 1.0, 0, 0, 0, 0, 0.2, 0, 0),
+                static_object = ("static:sunlight","sunlight")
+
+                ).param(
+                    add_object_class_data = ("HUDData", "hud", "f16hud", "main viewport"),
+                    set_frustum           = (0.5, 10000, 30),
+                    set_bg_color          = (0, 0, 1),
+                    set_fog               = (2, 0.0, 0.0, 0.0, 0.5, 1.0, 10000.0, 100000.0),
+                    use_compositeviewer   = False,
+                    allow_unknown         = True,
+                )
+        )
+        )
 
     mymods.append(dueca.Module(
         "controller", "", sim_priority).param(
             set_timing = sim_timing,
             check_timing = (10000, 20000),
-            Kp = 1.0,
+            Kp = 10.0,
             Kd = 0.0,
+            Tp = 10.0,
+            z_ref_mult = 2.0,
             ))
 
     mymods.append(dueca.Module(
@@ -95,15 +264,6 @@ if this_node_id == ecs_node:
         "f16-hud", "", sim_priority).param(
             set_timing = sim_timing,
             check_timing = (10000, 20000)))
-
-    mymods.append(dueca.Module(
-        "gui-stick", "", admin_priority).param(
-            set_timing = sim_timing,
-            check_timing = (10000, 20000),
-            primary_controls = True,
-            primary_switches = True,
-            secondary_controls = True,
-            secondary_switches = True))
 
     #mymods.append(dueca.Module(
     #    "F16HUD", "", sim_priority).param(

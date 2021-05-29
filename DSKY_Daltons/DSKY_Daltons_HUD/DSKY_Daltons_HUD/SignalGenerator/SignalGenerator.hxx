@@ -23,19 +23,6 @@ USING_DUECA_NS;
 #include "comm-objects.h"
 
 // include headers for functions/classes you need in the module
-#include <Eigen/Dense>
-
-using Eigen::Vector3d;
-
-struct VehicleStateData {
-  Vector3d xyz;
-  Vector3d uvw;
-  //Quaternion quat; need to read up on how this actually works in Eigen                                                                    
-  Vector3d pqr;
-  float thrust;
-  float mass;
-  //float lgDelta[4]; need to think about the best way to do this, arrays suck                                                              
-};
 
 /** A module.
 
@@ -63,7 +50,6 @@ private: // channel access
   // examples:
   // ChannelReadToken    r_mytoken;
   // ChannelWriteToken   w_mytoken;
-  StreamChannelWriteToken<vehicleState> vehicleStateWriteToken;
 
 
 private: // activity allocation

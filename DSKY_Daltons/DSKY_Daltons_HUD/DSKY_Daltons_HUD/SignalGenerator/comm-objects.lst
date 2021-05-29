@@ -3,6 +3,3 @@
 # specify these with the .dco extension, examples:
 # DSKY_Daltons_HUD/comm-objects/MyDataObject.dco
 # Generic/comm-objects/PrimaryControls.dco
-DSKY_Daltons_Project/comm-objects/vehicleState.dco
-DSKY_Daltons_Project/comm-objects/flightControlModes.dco
-DSKY_Daltons_Project/comm-objects/setpoints.dco

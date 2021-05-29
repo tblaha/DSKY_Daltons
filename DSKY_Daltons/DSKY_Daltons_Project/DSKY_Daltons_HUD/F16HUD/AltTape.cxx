@@ -31,7 +31,9 @@ AltTape::~AltTape()
 void AltTape::DrawGL()
 {
    // convert meters to feet:
-   GLdouble alt_ft = altitude*3.28084;
+   // GLdouble alt_ft = altitude*3.28084;
+   // reverted back to meters
+   GLdouble alt_ft = altitude;
 
    char temp[10];
    int icount,jcount;

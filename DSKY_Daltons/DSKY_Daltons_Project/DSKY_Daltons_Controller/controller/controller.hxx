@@ -95,6 +95,8 @@ private: // simulation data
   float prev_qout;
   float prev_rout;
 
+  float maxThrusterMoment;
+
   /**
    * @brief Thrust controller internal variables
    * 
@@ -104,17 +106,18 @@ private: // simulation data
   Eigen::Vector3f           myInertialVel{};
   const Eigen::Vector3f  nB{0,0,1}; /**< Quaternized normal vector in body coordinates */
   Eigen::Vector3f        nI{}; /**< Quaternized normal vector in inertial coordinates */
-  const float T_max = 10000.0f; /**< Newtons */
+  const float T_max = 27000.0f; /**< Newtons */
+  const float t_limits[2] {0.01, 0.99};  /**< usable thrust region of the engine */
   const float gM = 1.62f; /**< moon gravity in m/s/s */
   float mass; /**< current mass as given by the dynamics module */
-  const float t_limits[2] {0.15, 0.95};  /**< usable thrust region of the engine */
   float T_ref {}; /**< to be calculated by the controller */
   float max_zdot {};
   float z_ref_setting {1.0f};
-  float zdot_P {2e-1};
+  float z_ref_mult {1.0f};
+  float Tp {2e-1};
   float mu {1.0f};
 
-  void update_max_zdot() { max_zdot = z_ref_setting * z_ref_setting; }; /**< max zdot, depending on mode */
+  void update_max_zdot() { max_zdot = z_ref_mult * z_ref_setting * z_ref_setting; }; /**< max zdot, depending on mode */
 
   float gen_z_dot_ref(const float& stick) {return -max_zdot * 2.0f * (stick - 0.5f); }; /**< controller reference for decend rate (positive down) */
 

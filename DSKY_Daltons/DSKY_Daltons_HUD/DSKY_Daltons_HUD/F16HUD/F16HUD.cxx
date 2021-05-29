@@ -13,7 +13,7 @@
 */
 
 static const char c_id[] =
-"$Id: F16HUD.cxx,v 1.8 2021/05/28 22:35:46 herwich Exp $";
+"$Id: F16HUD.cxx,v 1.10 2021/05/29 14:07:22 herwich Exp $";
 
 #define F16HUD_cxx
 // include the definition of the module class
@@ -244,10 +244,12 @@ void F16HUD::doCalculation(const TimeSpec& ts)
 
   try {
     StreamReader<vehicleState> myvehicleStateReader(myvehicleStateReadToken, ts);
-    your_data.ias = myvehicleStateReader.data().u;
-    your_data.alt = myvehicleStateReader.data().z;
-    your_data.roll = myvehicleStateReader.data().ex;
-    your_data.heading = myvehicleStateReader.data().ey;
+    your_data.ias = myvehicleStateReader.data().u; //full steam ahead
+    // myvehicleStateReader.data().u; //
+    your_data.alt = -myvehicleStateReader.data().z; //negative z is upwards
+    your_data.roll = myvehicleStateReader.data().phi;
+    your_data.pitch = myvehicleStateReader.data().theta;
+    your_data.heading = myvehicleStateReader.data().psi;
     your_data.loadfactor = myvehicleStateReader.data().thrust;
 
     // set data on windowed HUD

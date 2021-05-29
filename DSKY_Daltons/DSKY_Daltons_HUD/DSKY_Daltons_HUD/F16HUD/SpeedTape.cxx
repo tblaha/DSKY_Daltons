@@ -30,7 +30,10 @@ SpeedTape::~SpeedTape()
 void SpeedTape::DrawGL()
 {
    // airspeed in kts
-   GLdouble speed_kts = (3600.0/1852.0) * speed_ms;
+   // GLdouble speed_kts = (3600.0/1852.0) * speed_ms;
+   
+   // airspeed in m/s
+   GLdouble speed_kts = speed_ms;
 
    // plane equation for clipping planes
    GLdouble eqn[4];

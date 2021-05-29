@@ -14,6 +14,10 @@
     (float ey (Default 0.0f))
     (float ez (Default 0.0f))
 
+    (float phi (Default 0.0f))
+    (float theta (Default 0.0f))
+    (float psi (Default 0.0f))
+
     (float p (Default 0.0f))
     (float q (Default 0.0f))
     (float r (Default 0.0f))

@@ -70,6 +70,9 @@ if this_node_id == ecs_node:
 # modules for your project (example)
 mymods = []
 
+use_gui_stick = True;
+use_WorldView = False;
+
 gamma = 0.25;
 
 if this_node_id == ecs_node:

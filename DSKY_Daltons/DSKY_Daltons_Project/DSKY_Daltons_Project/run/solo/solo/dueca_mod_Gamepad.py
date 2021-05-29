@@ -93,7 +93,7 @@ if this_node_id == ecs_node:
         # Output data on the "PrimarySwitches" channel
         use_secondary_switches = True,
         # Output data on the "SecondarySwitches" channel
-        set_device = "/dev/input/js0",
+        set_device = "/dev/input/js1",
         # Supply the path to a joystick device. Multiple devices may be added
         # the result will be one logical device with a number of axes and
         # buttons

@@ -98,9 +98,10 @@ dynamics::dynamics(Entity* e, const char* part, const
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
 
   // initialize the data you need in your simulation
-  body(1, 1, 1, 1, 1, 1, 1, 0),
+  body(4500, 20800, 17400, 16500, 0, 0, 0, 0),
   workspace(13),
   gravity(0, 0, 1.62),
+  thursterLocation(0, 0, 0),
 
   // initialize the data you need for the trim calculation
 
@@ -112,6 +113,7 @@ dynamics::dynamics(Entity* e, const char* part, const
   //           MyData::classname, "label", Channel::Continuous),
   thrusterForcesReadToken(getId(), NameSet(getEntity(), "thrusterForces", part)),
   vehicleStateWriteToken(getId(), NameSet(getEntity(), "vehicleState", part)),
+  ObjectMotionWriteToken(getId(), NameSet(getEntity(), "ObjectMotion", part)),
 
   // Referee channels
   //refVehicleStateWriteToken(getId(), NameSet("VehicleStateStream://world"), "VehicleStateStream", "Team2", Channel::Continuous, Channel::OneOrMoreEntries),
@@ -126,21 +128,27 @@ dynamics::dynamics(Entity* e, const char* part, const
   do_calc(getId(), "Integrates all forces. Also provides landing gear sim", &cb1, ps)
 {
   // do the actions you need for the simulation
-  this->thrusterForcesData.F << 0, 0, 0;
-  this->thrusterForcesData.M << 0, 0, 0;
+  this->thrusterForcesData.F << 0.0, 0.0, 0.0;
+  this->thrusterForcesData.M << 0.0, 0.0, 0.0;
 
-  this->vehicleStateData.xyz << 0, 0, 0;
-  this->vehicleStateData.uvw << 0, 0, 0;
-  this->vehicleStateData.pqr << 0, 0, 0;
+  this->vehicleStateData.xyz << 0.0, 0.0, 0.0;
+  this->vehicleStateData.uvw << 0.0, 0.0, 0.0;
+  this->vehicleStateData.pqr << 0.0, 0.0, 0.0;
 
   this->vehicleStateData.quat.w() = 1.0;
-  this->vehicleStateData.quat.x() = 0;
-  this->vehicleStateData.quat.y() = 0;
-  this->vehicleStateData.quat.z() = 0;
+  this->vehicleStateData.quat.x() = 0.0;
+  this->vehicleStateData.quat.y() = 0.0;
+  this->vehicleStateData.quat.z() = 0.0;
 
-  this->vehicleStateData.thrust = 0;
-  this->vehicleStateData.mass = 100;
+  this->vehicleStateData.phi = 0.0;
+  this->vehicleStateData.theta = 0.0;
+  this->vehicleStateData.psi = 0.0;
+
+  this->vehicleStateData.thrust = 0.0;
+  this->vehicleStateData.mass = 4500.0;
   //this->vehicleStateData.lgDelta = { }; see .hxx
+
+  bodySetStateToCurrentData();
 
   // connect the triggers for simulation
   do_calc.setTrigger(thrusterForcesReadToken || initialConditionsEventReadToken || respawnEventReadToken || fuelRewardEventReadToken);
@@ -358,10 +366,15 @@ void dynamics::readInitialConditionsEvent(const TimeSpec& ts) {
           this->vehicleStateData.xyz << initialConditionsEventReader.data().x, initialConditionsEventReader.data().y, initialConditionsEventReader.data().z;
           this->vehicleStateData.uvw << initialConditionsEventReader.data().u, initialConditionsEventReader.data().v, initialConditionsEventReader.data().w;
           this->vehicleStateData.pqr << initialConditionsEventReader.data().p, initialConditionsEventReader.data().q, initialConditionsEventReader.data().r;
-          //this->vehicleStateData.??? << initialConditionsEventReader.data().phi, initialConditionsEventReader.data().theta, initialConditionsEventReader.data().psi;
+          
+          this->vehicleStateData.phi = initialConditionsEventReader.data().phi;
+          this->vehicleStateData.theta = initialConditionsEventReader.data().theta;
+          this->vehicleStateData.psi = initialConditionsEventReader.data().psi;
+
           this->vehicleStateData.mass = initialConditionsEventReader.data().fuel_mass;
 
           // Self initializations
+          bodySetStateToCurrentData();
           this->vehicleStateData.thrust = 0;
         }
     }
@@ -382,9 +395,13 @@ void dynamics::readRespawnEvent(const TimeSpec& ts) {
         this->vehicleStateData.xyz << respawnEventReader.data().x, respawnEventReader.data().y, respawnEventReader.data().z;
         this->vehicleStateData.uvw << respawnEventReader.data().u, respawnEventReader.data().v, respawnEventReader.data().w;
         this->vehicleStateData.pqr << respawnEventReader.data().p, respawnEventReader.data().q, respawnEventReader.data().r;
-        //this->vehicleStateData.??? << respawnEventReader.data().phi, respawnEventReader.data().theta, respawnEventReader.data().psi;
+
+        this->vehicleStateData.phi = respawnEventReader.data().phi;
+        this->vehicleStateData.theta = respawnEventReader.data().theta;
+        this->vehicleStateData.psi = respawnEventReader.data().psi;
 
         // Self initializations
+        bodySetStateToCurrentData();
         this->vehicleStateData.thrust = 0;
       }
     }
@@ -437,11 +454,14 @@ void dynamics::writeVehicleStateStream(const TimeSpec& ts) {
   vehicleStateWriter.data().v = this->vehicleStateData.uvw(1);
   vehicleStateWriter.data().w = this->vehicleStateData.uvw(2);
 
-  // see .hxx
-  // vehicleStateWriter.data().e0 = this->vehicleStateData.quat(0);
-  // vehicleStateWriter.data().ey = this->vehicleStateData.quat(1);
-  // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
-  // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
+  vehicleStateWriter.data().e0 = this->vehicleStateData.quat.w();
+  vehicleStateWriter.data().ex = this->vehicleStateData.quat.x();
+  vehicleStateWriter.data().ey = this->vehicleStateData.quat.y();
+  vehicleStateWriter.data().ez = this->vehicleStateData.quat.z();
+
+  vehicleStateWriter.data().phi = this->vehicleStateData.phi;
+  vehicleStateWriter.data().theta = this->vehicleStateData.theta;
+  vehicleStateWriter.data().psi = this->vehicleStateData.psi;
 
   vehicleStateWriter.data().p = this->vehicleStateData.pqr(0);
   vehicleStateWriter.data().q = this->vehicleStateData.pqr(1);
@@ -457,6 +477,36 @@ void dynamics::writeVehicleStateStream(const TimeSpec& ts) {
   // vehicleStateWriter.data().lgDelta4 = this->vehicleStateData.lgDelta(2);
   
   return;
+}
+
+void dynamics::writeObjectMotionStream(const TimeSpec& ts) {
+    StreamWriter<ObjectMotion> ObjectMotionWriter(ObjectMotionWriteToken, ts);
+
+    ObjectMotionWriter.data().xyz[0] = this->vehicleStateData.xyz(0);
+    ObjectMotionWriter.data().xyz[1] = this->vehicleStateData.xyz(1);
+    ObjectMotionWriter.data().xyz[2] = this->vehicleStateData.xyz(2);
+
+    ObjectMotionWriter.data().uvw[0] = this->vehicleStateData.uvw(0);
+    ObjectMotionWriter.data().uvw[1] = this->vehicleStateData.uvw(1);
+    ObjectMotionWriter.data().uvw[2] = this->vehicleStateData.uvw(2);
+
+    // see .hxx
+    // vehicleStateWriter.data().e0 = this->vehicleStateData.quat(0);
+    // vehicleStateWriter.data().ey = this->vehicleStateData.quat(1);
+    // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
+    // vehicleStateWriter.data().ez = this->vehicleStateData.quat(2);
+
+    ObjectMotionWriter.data().omega[0] = this->vehicleStateData.pqr(0);
+    ObjectMotionWriter.data().omega[1] = this->vehicleStateData.pqr(1);
+    ObjectMotionWriter.data().omega[2] = this->vehicleStateData.pqr(2);
+
+    // see .hxx
+    // vehicleStateWriter.data().lgDelta1 = this->vehicleStateData.lgDelta(0);
+    // vehicleStateWriter.data().lgDelta2 = this->vehicleStateData.lgDelta(1);
+    // vehicleStateWriter.data().lgDelta3 = this->vehicleStateData.lgDelta(2);
+    // vehicleStateWriter.data().lgDelta4 = this->vehicleStateData.lgDelta(2);
+
+    return;
 }
 
 void dynamics::writeRefVehicleStateStream(const TimeSpec& ts) {
@@ -475,16 +525,14 @@ void dynamics::writeRefVehicleStateStream(const TimeSpec& ts) {
   refVehicleStateWriter.data().q = this->vehicleStateData.pqr(1);
   refVehicleStateWriter.data().r = this->vehicleStateData.pqr(2);
 
-  // not implemented
-  // refVehicleStateWriter.data().phi = 
-  // refVehicleStateWriter.data().theta = 
-  // refVehicleStateWriter.data().psi = 
+  refVehicleStateWriter.data().phi = this->vehicleStateData.phi;
+  refVehicleStateWriter.data().theta = this->vehicleStateData.theta;
+  refVehicleStateWriter.data().psi = this->vehicleStateData.psi;
 
-  // see .hxx
-  // refVehicleStateWriter.data().q1 = this->vehicleStateData.quat(0);
-  // refVehicleStateWriter.data().q2 = this->vehicleStateData.quat(1);
-  // refVehicleStateWriter.data().q3 = this->vehicleStateData.quat(2);
-  // refVehicleStateWriter.data().q4 = this->vehicleStateData.quat(2);
+  refVehicleStateWriter.data().q1 = this->vehicleStateData.quat.w();
+  refVehicleStateWriter.data().q2 = this->vehicleStateData.quat.x();
+  refVehicleStateWriter.data().q3 = this->vehicleStateData.quat.y();
+  refVehicleStateWriter.data().q4 = this->vehicleStateData.quat.z();
 
   refVehicleStateWriter.data().fuel_mass = this->vehicleStateData.mass;
   refVehicleStateWriter.data().F_thruster = this->vehicleStateData.thrust;
@@ -503,10 +551,11 @@ void dynamics::writeRefVehicleStateStream(const TimeSpec& ts) {
   return;
 }
 
-void dynamics::derivative(VectorE& xd, double dt)
-{
+void dynamics::derivative(VectorE& xd, double dt) {
     body.zeroForces();
     body.addInertialGravity(gravity);
+    body.applyBodyForce(this->thrusterForcesData.F, this->thursterLocation);
+    body.applyBodyMoment(this->thrusterForcesData.M);
 
     body.derivative(xd);
 
@@ -523,8 +572,7 @@ void dynamics::setState(const VectorE& newx) {
   return;
 }
 
-void dynamics::bodyStep(const TimeSpec& ts)
-{
+void dynamics::bodyStep(const TimeSpec& ts) {
     double dt = ts.getDtInSeconds();
 
     integrate_rungekutta(*this, workspace, dt);
@@ -538,7 +586,22 @@ void dynamics::bodyStep(const TimeSpec& ts)
     this->vehicleStateData.quat.y() = this->body.X()[10];
     this->vehicleStateData.quat.z() = this->body.X()[11];
 
+    this->body.output();
+
+    this->vehicleStateData.phi = this->body.phi();
+    this->vehicleStateData.theta = this->body.theta();
+    this->vehicleStateData.psi = this->body.psi();
+
     return;
+}
+
+void dynamics::bodySetStateToCurrentData() {
+  // setState(this->vehicleStateData.xyz[0], this->vehicleStateData.xyz[1], this->vehicleStateData.xyz[2],
+  //          this->vehicleStateData.uvw[0], this->vehicleStateData.uvw[1], this->vehicleStateData.uvw[2],
+  //          this->vehicleStateData.phi, this->vehicleStateData.theta, this->vehicleStateData.psi,
+  //          this->vehicleStateData.pqr[0], this->vehicleStateData.pqr[1], this->vehicleStateData.pqr[2]);
+
+  return;
 }
 
 // Make a TypeCreator object for this module, the TypeCreator
