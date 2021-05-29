@@ -1,0 +1,328 @@
+# the channels on which the module-under-test (MUD) should return the correct outputs
+# there must be at least 1
+stream_output_channels:
+- DSKY_Daltons_Project/comm-objects/thrusterForces
+
+# the channels on which to supply input data to the MUD
+# there must be at least 1
+stream_input_channels:
+- DSKY_Daltons_Project/comm-objects/vehicleState
+- SimCourse2021/comm-objects/PrimaryControls
+- SimCourse2021/comm-objects/PrimarySwitches
+- SimCourse2021/comm-objects/SecondaryControls
+- SimCourse2021/comm-objects/SecondarySwitches
+
+# Elements of the stream_output_channels to be written to the test report file as raw values
+debug_outputs:
+- thrusterForces.Fx
+- thrusterForces.Fy
+- thrusterForces.Fz
+- thrusterForces.Mx
+- thrusterForces.My
+- thrusterForces.Mz
+
+# actual test definition
+tests:
+  - test-1:
+    id: -1 
+    desc: Baseline; just hovering with 0.5 input (nether decend nor ascend)
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [-4860.0f, 100.0f] 
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test0:
+    id: 0 
+    desc: Baseline; just hovering with 0.5 input (nether decend nor ascend)
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [-4860.0f, 100.0f] 
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test1:
+    id: 1 
+    desc: 30deg roll, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.966f
+      vehicleState.ex: 0.259f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [-5612.0f, 100.0f]  # ( 1 / cos(30) ) * m * g
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test2:
+    id: 2 
+    desc: 30deg pitch, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.966f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.259f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [-5612.0f, 100.0f]  # ( 1 / cos(30) ) * m * g
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test3:
+    id: 3 
+    desc: 30deg yaw, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.966f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.259f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f] 
+      thrusterForces.Fz: [-4860.0f, 100.0f] 
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test4:
+    id: 4 
+    desc: 89.9deg pitch, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.708f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.706f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-9500.0f, 100.0f]  # positive saturation
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test5:
+    id: 5 
+    desc: 90.1deg pitch, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.706f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.708f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-1500.0f, 100.0f]  # negative saturation
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test6:
+    id: 6 
+    desc: normal attitude, upward velocity, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 1.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-5460.0f, 100.0f]  # mass * (g + P * (0-w)) with P=0.2, w=-1, g=1.62
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test7:
+    id: 7 
+    desc: 30deg pitch, 1 m/s velocity in body Z, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.966f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.259f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 1.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-6212.0f, 10.0f]  # (1/cos(30)) * mass * (g + P * (0-w*cos(30))) with P=0.2, w=-1, g=1.62
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test8:
+    id: 8 
+    desc: 30deg roll, 1 m/s velocity in body Z, still zero rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 0.966f
+      vehicleState.ex: 0.259f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 0.0f
+      vehicleState.v: 0.0f
+      vehicleState.w: 1.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 0.5f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-6212.0f, 10.0f]  # (1/cos(30)) * mass * (g + P * (0-w*cos(30))) with P=0.2, w=-1, g=1.62
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test9:
+    id: 9 
+    desc: normal attitude, horizontal motion, 1m/s upwards rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 10.0f
+      vehicleState.v: 10.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 1.0f
+      SecondaryControls.flap_setting: 1.0f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-5460.0f, 10.0f]  # m*(1.62 + P*w_ref) P=0.2, w_ref=-1, g=1.62
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test10:
+    id: 10
+    desc: normal attitude, horizontal motion, 4m/s upwards rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 10.0f
+      vehicleState.v: 10.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 1.0f
+      SecondaryControls.flap_setting: 2.0f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-7260.0f, 10.0f]  # m*(1.62 + P*w_ref) P=0.2, w_ref=-1, g=1.62
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+  - test11:
+    id: 11
+    desc: normal attitude, horizontal motion, 25m/s upwards rate command
+    inputs:
+      # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
+      vehicleState.z: 100.0f
+      vehicleState.u: 10.0f
+      vehicleState.v: 10.0f
+      vehicleState.w: 0.0f
+      vehicleState.mass: 3000.0f
+      PrimaryControls.uc: 1.0f
+      SecondaryControls.flap_setting: 5.0f 
+    outputs:
+      # first element is desired output. Second element is acceptable +- range around desired output.
+      thrusterForces.Fx: [0.0f, 1.0f] 
+      thrusterForces.Fy: [0.0f, 1.0f]
+      thrusterForces.Fz: [-9500.0f, 10.0f]  # positive saturation
+      thrusterForces.Mx: [0.0f, 1.0f] 
+      thrusterForces.My: [0.0f, 1.0f] 
+      thrusterForces.Mz: [0.0f, 1.0f] 
+

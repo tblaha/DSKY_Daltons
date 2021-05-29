@@ -23,7 +23,7 @@
 // include the debug writing header. Warning and error messages
 // are on by default, debug and info can be selected by
 // uncommenting the respective defines
-#define D_MOD
+//#define D_MOD
 #define W_MOD
 //#define I_MOD
 #include <debug.h>
