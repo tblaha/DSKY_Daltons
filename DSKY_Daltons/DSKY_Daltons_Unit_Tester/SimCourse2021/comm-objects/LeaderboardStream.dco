@@ -1,0 +1,10 @@
+(Type int)
+
+(Stream LeaderboardStream
+		(int TeamNumber1)
+		(int TeamNumber2)
+		(int TeamNumber3)
+		(int ScoreTeam1)
+		(int ScoreTeam2)
+		(int ScoreTeam3)
+)		

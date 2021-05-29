@@ -21,10 +21,15 @@ USING_DUECA_NS;
 
 // This includes headers for the objects that are sent over the channels
 #include "comm-objects.h"
-#include "tester.hxx"
+//#include "tester.hxx"
 
 // include headers for functions/classes you need in the module
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include "tests.hxx"
 
+using namespace std;
 
 /** A module.
 
@@ -33,13 +38,65 @@ USING_DUECA_NS;
 
     \verbinclude unit_tester.scm
 */
-class unit_tester: public SimulationModule, public tester
+class unit_tester: public SimulationModule, public tests
 {
   /** self-define the module type, to ease writing the parameter table */
   typedef unit_tester _ThisModule_;
 
 private: // simulation data
   // declare the data you need in your simulation
+
+private: // tester stuff
+  string filename {"Tests.log"};
+
+  ofstream _logfile {};
+  stringstream _logtext {};
+
+  void document_test(const string desc, const bool& pass, const stringstream& debug_info, const TimeSpec& ts) {
+      //_logtext << ts.getUsecsElapsed();
+      _logtext << "Test #" << _test_id << " | " << (pass ? "OK" : "FAIL") << " | " << desc << endl;
+      _logtext << debug_info.str() << endl;
+  };
+
+
+  void flush_to_file() {
+    _logfile << _logtext.str();
+  };
+
+  void perform_tests(const TimeSpec& ts, const bool& hold) {
+    if ((_test_id < _num_tests) && !hold && !_test_published) {
+      // if we are in hold: act like we didn't publish yet, so don't transition
+      // to reading any reponses (there won't be any)
+      _test_published = true;
+      _response_ready = true; // for now, maybe wait a defined amount if iterations
+      
+      write_test_data(ts, _test_id);
+    } else {
+      if (_response_ready) {
+        string desc;
+        bool test_passed = evaluate_response(desc);
+
+        stringstream debug_info {};
+        generate_debug_info(debug_info);
+        document_test(desc, test_passed, debug_info, ts);
+
+        if (test_passed) {
+          D_MOD("OK");
+        } else {
+          D_MOD("FAIL");
+        }
+
+        _test_published = false;
+        _response_ready = false;
+
+        _test_id++;
+      }
+      // write default data if not currently performing a test 
+      write_test_data(ts, -1);
+    }
+
+  };
+
 
 private: // trim calculation data
   // declare the trim calculation data needed for your simulation

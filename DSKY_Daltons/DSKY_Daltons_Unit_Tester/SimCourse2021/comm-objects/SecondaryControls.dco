@@ -1,0 +1,9 @@
+(Type float)
+
+(EventAndStream SecondaryControls
+		(float throttle_left (Default 0.0f))
+		(float throttle_right (Default 0.0f))
+		(float flap_setting (Default 0.0f))
+		(float speedbrake (Default 0.0f))
+		)
+

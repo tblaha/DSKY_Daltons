@@ -1,16 +1,16 @@
 # the channels on which the module-under-test (MUD) should return the correct outputs
 # there must be at least 1
 stream_output_channels:
-- DSKY_Daltons_Project/comm-objects/thrusterForces
+- DSKY_Daltons_Project/comm-objects/thrusterForces.dco
 
 # the channels on which to supply input data to the MUD
 # there must be at least 1
 stream_input_channels:
-- DSKY_Daltons_Project/comm-objects/vehicleState
-- SimCourse2021/comm-objects/PrimaryControls
-- SimCourse2021/comm-objects/PrimarySwitches
-- SimCourse2021/comm-objects/SecondaryControls
-- SimCourse2021/comm-objects/SecondarySwitches
+- DSKY_Daltons_Project/comm-objects/vehicleState.dco
+- SimCourse2021/comm-objects/PrimaryControls.dco
+- SimCourse2021/comm-objects/PrimarySwitches.dco
+- SimCourse2021/comm-objects/SecondaryControls.dco
+- SimCourse2021/comm-objects/SecondarySwitches.dco
 
 # Elements of the stream_output_channels to be written to the test report file as raw values
 debug_outputs:

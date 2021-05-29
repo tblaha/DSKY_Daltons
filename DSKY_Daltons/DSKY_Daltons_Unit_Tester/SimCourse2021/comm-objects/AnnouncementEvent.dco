@@ -1,0 +1,5 @@
+(Type string)
+
+(Event AnnouncementEvent
+		(string message)
+)		

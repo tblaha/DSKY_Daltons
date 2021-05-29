@@ -76,6 +76,16 @@ if this_node_id == ecs_node:
             set_timing = sim_timing,
             check_timing = (10000, 20000)))
 
+    mymods.append(dueca.Module(
+        "controller", "", sim_priority).param(
+            set_timing = sim_timing,
+            check_timing = (10000, 20000),
+            Kp = 1.0,
+            Kd = 0.0,
+            Tp = 1.0,
+            z_ref_mult = 2.0,
+    ))
+
     # Uncomment and adapt for web-based graph, see DUECA documentation.
     # This also serves the static files for the default plotting application
     # over http.

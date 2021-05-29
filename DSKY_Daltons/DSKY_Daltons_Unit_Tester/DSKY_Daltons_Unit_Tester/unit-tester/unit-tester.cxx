@@ -17,15 +17,16 @@
 
 
 #define unit_tester_cxx
-// include the definition of the module class
-#include "unit-tester.hxx"
-
 // include the debug writing header. Warning and error messages
 // are on by default, debug and info can be selected by
 // uncommenting the respective defines
 #define D_MOD
 //#define I_MOD
 #include <debug.h>
+
+// include the definition of the module class
+#include "unit-tester.hxx"
+
 
 // include additional files needed for your calculation here
 
@@ -96,7 +97,7 @@ unit_tester::unit_tester(Entity* e, const char* part, const
      fill a snapshot, or to restore your state from a snapshot. Only
      applicable if you have no state. */
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
-  tester("TestLog.txt", getId(), getEntity(), part, classname),
+  tests(getId(), getEntity(), part, classname),
 
   // initialize the data you need in your simulation
 
@@ -123,6 +124,9 @@ unit_tester::unit_tester(Entity* e, const char* part, const
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
   //trimCalculationCondition(/* fill in your trim triggering channels */);
+
+  // tester stuff
+  _logfile.open(filename);
 }
 
 bool unit_tester::complete()
@@ -136,6 +140,8 @@ bool unit_tester::complete()
 unit_tester::~unit_tester()
 {
   //
+  flush_to_file();
+  _logfile.close();
 }
 
 // as an example, the setTimeSpec function

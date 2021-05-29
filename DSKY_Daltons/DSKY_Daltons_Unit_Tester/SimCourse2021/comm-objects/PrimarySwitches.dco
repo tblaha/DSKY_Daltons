@@ -1,0 +1,7 @@
+(Type bool)
+(EventAndStream PrimarySwitches
+		(bool xmit (Default false))
+		(bool trim_up (Default false))
+		(bool trim_down (Default false))
+		(bool AP_disconnect (Default false)))
+

@@ -18,6 +18,7 @@ echo "DSKY_Daltons_Dynamics\n\n\n" | dueca-project checkout
 echo "DSKY_Daltons_Controller\n\n\n" | dueca-project checkout
 echo "DSKY_Daltons_HUD\n\n\n" | dueca-project checkout
 echo "DSKY_Daltons_Unit_Tester\n\n\n" | dueca-project checkout
+echo "DSKY_Daltons_WorldView2\n\n\n" | dueca-project checkout
 
 
 
