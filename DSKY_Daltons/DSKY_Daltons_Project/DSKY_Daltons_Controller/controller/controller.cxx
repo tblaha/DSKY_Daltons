@@ -34,6 +34,8 @@
 #define DO_INSTANTIATE
 #include <dusime.h>
 
+#include <cmath>
+
 // class/module name
 const char* const controller::classname = "controller";
 
@@ -110,18 +112,56 @@ controller::controller(Entity* e, const char* part, const
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
 
   // initialize the data you need in your simulation
+  // Input rates
   myRollRate(0.0f),
   myPitchRate(0.0f),
   myYawRate(0.0f),
   myThrottle(0.0f),
+  // Maximum angular rates
+  maxp(4.0f),
+  maxq(4.0f),
+  maxr(4.0f),
+  // Vehicle angular rates
+  myp(0.0f),
+  myq(0.0f),
+  myr(0.0f),
+  // Error
+  ep(0.0f),
+  eq(0.0f),
+  er(0.0f),
+  // Proportional control
+  Kp(0.0f),
+  Pp(0.0f),
+  Pq(0.0f),
+  Pr(0.0f),
+  // Derivative control
+  Kd(0.0f),
+  Dp(0.0f),
+  Dq(0.0f),
+  Dr(0.0f),
+  // Controller output
+  pout(0.0f),
+  qout(0.0f),
+  rout(0.0f),
+  // Angular accelerations
+  P(0.0f),
+  Q(0.0f),
+  R(0.0f),
+  // Moments of Inertia
+  Ixx(100.0f),
+  Iyy(100.0f),
+  Izz(100.0f),
+  // Output Forces and Moments
   myMx(0.0f),
   myMy(0.0f),
   myMz(0.0f),
   myFx(0.0f),
   myFy(0.0f),
   myFz(0.0f),
-  Kp(1.0f),
-  Kd(0.0f),
+  // Data storage
+  prev_pout(0.0f),
+  prev_qout(0.0f),
+  prev_rout(0.0f),
 
   // initialize the data you need for the trim calculation
 
@@ -299,19 +339,21 @@ void controller::doCalculation(const TimeSpec& ts)
 
       //Reading from the primary control stream
       try {
-          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts-100);
-          myRollRate = myControlPrimaryReader.data().ux;
-          myPitchRate = myControlPrimaryReader.data().uy;
-          myYawRate = myControlPrimaryReader.data().uz;
+          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts);
+          myRollRate = myControlPrimaryReader.data().ux*maxp;
+          myPitchRate = myControlPrimaryReader.data().uy*maxq;
+          myYawRate = myControlPrimaryReader.data().uz*maxr;
           myThrottle = myControlPrimaryReader.data().uc;
       }
       catch (Exception& e) {
           W_MOD(classname << "PrimaryControls read had an error @ " << ts << e);
       }
 
-      //Reading from the secondary control stream
+      //Reading from the secondary control stream and updating the zdot reference generator limits
       try {
           StreamReader<SecondaryControls> myControlSecondaryReader(myControlSecondaryStreamReadToken, ts);
+          z_ref_setting = myControlSecondaryReader.data().flap_setting;
+          update_max_zdot();
       }
       catch (Exception& e) {
           W_MOD(classname<< "Sec Ctrl This channel had an error @ " << ts );
@@ -335,7 +377,20 @@ void controller::doCalculation(const TimeSpec& ts)
 
       //Reading from the vehicle
       try {
-          StreamReader<vehicleState> myVehicleStateReader(myVehicleStateStreamReadToken, ts);
+          StreamReader<vehicleState> myVehicleStateReader(myVehicleStateStreamReadToken, ts-100);
+          myp = myVehicleStateReader.data().p;
+          myq = myVehicleStateReader.data().q;
+          myr = myVehicleStateReader.data().r;
+          myuvw = Eigen::Vector3f(
+            myVehicleStateReader.data().u, 
+            myVehicleStateReader.data().v, 
+            myVehicleStateReader.data().w);
+          myquat = Eigen::Quaternionf(
+            myVehicleStateReader.data().e0,
+            myVehicleStateReader.data().ex,
+            myVehicleStateReader.data().ey,
+            myVehicleStateReader.data().ez);
+          mass = myVehicleStateReader.data().mass;
       }
       catch (Exception& e) {
           W_MOD(classname<< "This channel had an error @ " << ts );
@@ -345,16 +400,65 @@ void controller::doCalculation(const TimeSpec& ts)
       //WRITING TO THE CHANNELS
       //
       
-      // Simple test calculations
-      myMx = myRollRate*Kp;
-      myMy = myPitchRate*Kp;
-      myMz = myYawRate*Kp;
+      // Feedback loop
+      ep = myRollRate-myp;
+      eq = myPitchRate-myq;
+      er = myYawRate-myr;
       
+      // Proportional part
+      Pp = Kp*ep;
+      Pq = Kp*eq;
+      Pr = Kp*er;
+      
+      // Derivative part
+      Dp = 1*Kd;
+      Dq = 1*Kd;
+      Dr = 1*Kd;
+      
+      // Controller output
+      pout = Pp+Dp;
+      qout = Pq+Dq;
+      rout = Pr+Dr;
+      
+      // Compute the angular accelerations
+      P = (pout-prev_pout)/ts.getDtInSeconds();
+      Q = (qout-prev_qout)/ts.getDtInSeconds();
+      R = (rout-prev_rout)/ts.getDtInSeconds();
+      
+      // Moments
+      myMx = Ixx*P;
+      myMy = Iyy*Q;
+      myMz = Izz*R;
+      
+      // Forces
       myFx = 0.0f;
       myFy = 0.0f;
-      myFz = -myThrottle*Kp;
+      myFz = -myThrottle*1;
+      
+      // Store variables
+      prev_pout = pout;
+      prev_qout = qout;
+      prev_rout = rout;
 
+      /**
+       * @brief Thrust controller
+       * 
+       */
+      myInertialVel = myquat * myuvw; /**< note: not normal multiplication! Hamiltonion products according to v' = qvq-1 */
+      nI = myquat * nB;
+      mu = (std::abs(nI[2]) < 0.1) ? std::copysign(0.1f, nI[2]) : nI[2];
 
+      float T_raw = mass / mu * ( zdot_P * (-gen_z_dot_ref(myThrottle) + myInertialVel[2]) + gM);
+
+      myFz = -clamp( T_raw, T_max*t_limits[0], T_max*t_limits[1] );
+
+      D_MOD("Current zdotref " << -gen_z_dot_ref(myThrottle));
+      D_MOD("Current zdot " << myInertialVel[2]);
+      D_MOD("Current mu " << mu);
+      //D_MOD("Current T_raw " << T_raw);
+      D_MOD("Current myFz" << myFz);
+      D_MOD("Current uc" << myThrottle);
+      D_MOD("Current max_zdot" << max_zdot);
 
     // access the input
     // example:

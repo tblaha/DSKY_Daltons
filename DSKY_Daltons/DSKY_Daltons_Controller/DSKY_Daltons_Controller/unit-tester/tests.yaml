@@ -7,10 +7,6 @@ stream_output_channels:
 # there must be at least 1
 stream_input_channels:
 - DSKY_Daltons_Project/comm-objects/vehicleState
-- SimCourse2021/comm-objects/PrimaryControls
-- SimCourse2021/comm-objects/PrimarySwitches
-- SimCourse2021/comm-objects/SecondaryControls
-- SimCourse2021/comm-objects/SecondarySwitches
 
 # Elements of the stream_output_channels to be written to the test report file as raw values
 debug_outputs:
@@ -23,16 +19,19 @@ debug_outputs:
 
 # actual test definition
 tests:
-  - test0:
-    id: 0
+  - test-1:
+    id: -1
     desc: Tests the initial response of the main engine thrust controller to pilot input
     inputs:
       # make sure that all values you do not specify have reasonable default values in the .dco
+      vehicleState.e0: 1.0f
+      vehicleState.ex: 0.0f
+      vehicleState.ey: 0.0f
+      vehicleState.ez: 0.0f
       vehicleState.x: 0.0f
       vehicleState.y: 0.0f
       vehicleState.z: 100.0f
       vehicleState.mass: 1000.0f
-      PrimaryControls.uc: 1.0f
     outputs:
       # first element is desired output. Second element is acceptable +- range around desired output.
       thrusterForces.Fx: [0.0f, 1.0f] 
@@ -41,16 +40,15 @@ tests:
       thrusterForces.Mx: [0.0f, 1.0f] 
       thrusterForces.My: [0.0f, 1.0f] 
       thrusterForces.Mz: [0.0f, 1.0f] 
-  - test1:
-    id: 1
-    desc: Tests the initial response of the controller to yaw pilot input
+  - test0:
+    id: 0
+    desc: 
     inputs:
       # make sure that all values you do not specify have reasonable default values in the .dco
       vehicleState.x: 0.0f
       vehicleState.y: 0.0f
       vehicleState.z: 100.0f
       vehicleState.mass: 1000.0f
-      PrimaryControls.ux: 1.0f
     outputs:
       # first element is desired output. Second element is acceptable +- range around desired output.
       thrusterForces.Fx: [0.0f, 1.0f] 

@@ -1,123 +1,56 @@
 /* ------------------------------------------------------------------   */
-/*      item            : controller.hxx
-        made by         : tblaha
+/*      item            : SignalGenerator.hxx
+        made by         : hajo
         from template   : DusimeModuleTemplate.hxx
         template made by: Rene van Paassen
-        date            : Thu May 13 15:41:29 2021
+        date            : Fri May 28 18:02:49 2021
         category        : header file
         description     :
-        changes         : Thu May 13 15:41:29 2021 first version
+        changes         : Fri May 28 18:02:49 2021 first version
         template changes: 030401 RvP Added template creation comment
         language        : C++
         copyright       : (c) 2016 TUDelft-AE-C&S
 */
 
-#ifndef controller_hxx
-#define controller_hxx
+#ifndef SignalGenerator_hxx
+#define SignalGenerator_hxx
 
 // include the dusime header
 #include <dusime.h>
 USING_DUECA_NS;
 
-#include <Eigen/Dense>
-
 // This includes headers for the objects that are sent over the channels
 #include "comm-objects.h"
 
 // include headers for functions/classes you need in the module
+#include <Eigen/Dense>
 
+using Eigen::Vector3d;
+
+struct VehicleStateData {
+  Vector3d xyz;
+  Vector3d uvw;
+  //Quaternion quat; need to read up on how this actually works in Eigen                                                                    
+  Vector3d pqr;
+  float thrust;
+  float mass;
+  //float lgDelta[4]; need to think about the best way to do this, arrays suck                                                              
+};
 
 /** A module.
 
     The instructions to create an module of this class from the Scheme
     script are:
 
-    \verbinclude controller.scm
+    \verbinclude signal-generator.scm
 */
-class controller: public SimulationModule
+class SignalGenerator: public SimulationModule
 {
   /** self-define the module type, to ease writing the parameter table */
-  typedef controller _ThisModule_;
+  typedef SignalGenerator _ThisModule_;
 
 private: // simulation data
   // declare the data you need in your simulation
-  // Input rates
-  float myRollRate;
-  float myPitchRate;
-  float myYawRate;
-  float myThrottle;
-  // Maximum angular rates
-  float maxp;
-  float maxq;
-  float maxr;
-  // Vehicle angular rates
-  float myp;
-  float myq;
-  float myr;
-  // Error
-  float ep;
-  float eq;
-  float er;
-  // Proportional control
-  float Kp;
-  float Pp;
-  float Pq;
-  float Pr;
-  // Derivative control
-  float Kd;
-  float Dp;
-  float Dq;
-  float Dr;
-  // Controller output
-  float pout;
-  float qout;
-  float rout;
-  // Angular accelerations
-  float P;
-  float Q;
-  float R;
-  // Moments of Inertia
-  float Ixx;
-  float Iyy;
-  float Izz;
-  // Output Forces and Moments
-  float myMx;
-  float myMy;
-  float myMz;
-  float myFx;
-  float myFy;
-  float myFz;
-  // Data storage
-  float prev_pout;
-  float prev_qout;
-  float prev_rout;
-
-  /**
-   * @brief Thrust controller internal variables
-   * 
-   */
-  Eigen::Quaternionf        myquat{};
-  Eigen::Vector3f           myuvw{};
-  Eigen::Vector3f           myInertialVel{};
-  const Eigen::Vector3f  nB{0,0,1}; /**< Quaternized normal vector in body coordinates */
-  Eigen::Vector3f        nI{}; /**< Quaternized normal vector in inertial coordinates */
-  const float T_max = 10000.0f; /**< Newtons */
-  const float gM = 1.62f; /**< moon gravity in m/s/s */
-  float mass; /**< current mass as given by the dynamics module */
-  const float t_limits[2] {0.15, 0.95};  /**< usable thrust region of the engine */
-  float T_ref {}; /**< to be calculated by the controller */
-  float max_zdot {};
-  float z_ref_setting {1.0f};
-  float zdot_P {2e-1};
-  float mu {1.0f};
-
-  void update_max_zdot() { max_zdot = z_ref_setting * z_ref_setting; }; /**< max zdot, depending on mode */
-
-  float gen_z_dot_ref(const float& stick) {return -max_zdot * 2.0f * (stick - 0.5f); }; /**< controller reference for decend rate (positive down) */
-
-  template<class T>
-  T clamp(const T& v, const T& lo, const T& hi) {return (v<lo) ? lo : (v>hi) ? hi : v;};
-  
 
 private: // trim calculation data
   // declare the trim calculation data needed for your simulation
@@ -130,19 +63,7 @@ private: // channel access
   // examples:
   // ChannelReadToken    r_mytoken;
   // ChannelWriteToken   w_mytoken;
-
-  // Tokens for the primary and secondary channels for control and switches
-  StreamChannelReadToken<PrimaryControls> myControlPrimaryStreamReadToken;
-  StreamChannelReadToken<SecondaryControls> myControlSecondaryStreamReadToken;
-
-  StreamChannelReadToken<PrimarySwitches> mySwitchPrimaryStreamReadToken;
-  StreamChannelReadToken<SecondarySwitches> mySwitchSecondaryStreamReadToken;
-
-  // Tokens for the vehicle state
-  StreamChannelReadToken<vehicleState> myVehicleStateStreamReadToken;
-
-  //Token to write to thruster force
-  StreamChannelWriteToken<thrusterForces> myThrusterForcesStreamWriteToken;
+  StreamChannelWriteToken<vehicleState> vehicleStateWriteToken;
 
 
 private: // activity allocation
@@ -151,7 +72,7 @@ private: // activity allocation
   PeriodicAlarm        myclock;
 
   /** Callback object for simulation calculation. */
-  Callback<controller>  cb1;
+  Callback<SignalGenerator>  cb1;
 
   /** Activity for simulation calculation. */
   ActivityCallback      do_calc;
@@ -168,7 +89,7 @@ public: // class name and trim/parameter tables
 
 public: // construction and further specification
   /** Constructor. Is normally called from scheme/the creation script. */
-  controller(Entity* e, const char* part, const PrioritySpec& ts);
+  SignalGenerator(Entity* e, const char* part, const PrioritySpec& ts);
 
   /** Continued construction. This is called after all script
       parameters have been read and filled in, according to the
@@ -180,7 +101,7 @@ public: // construction and further specification
   bool complete();
 
   /** Destructor. */
-  ~controller();
+  ~SignalGenerator();
 
   // add here the member functions you want to be called with further
   // parameters. These are then also added in the parameter table

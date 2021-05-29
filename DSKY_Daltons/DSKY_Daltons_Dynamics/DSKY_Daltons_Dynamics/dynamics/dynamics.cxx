@@ -98,7 +98,9 @@ dynamics::dynamics(Entity* e, const char* part, const
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
 
   // initialize the data you need in your simulation
-  body(),
+  body(1, 1, 1, 1, 1, 1, 1, 0),
+  workspace(13),
+  gravity( 0, 9.81, 0),
 
   // initialize the data you need for the trim calculation
 
@@ -112,7 +114,8 @@ dynamics::dynamics(Entity* e, const char* part, const
   vehicleStateWriteToken(getId(), NameSet(getEntity(), "vehicleState", part)),
 
   // Referee channels
-  refVehicleStateWriteToken(getId(), NameSet("VehicleStateStream://world"), "VehicleStateStream", "Team2", Channel::Continuous, Channel::OneOrMoreEntries),
+  //refVehicleStateWriteToken(getId(), NameSet("VehicleStateStream://world"), "VehicleStateStream", "Team2", Channel::Continuous, Channel::OneOrMoreEntries),
+  refVehicleStateWriteToken(getId(), NameSet(getEntity(), "VehicleStateStream", part)),
   initialConditionsEventReadToken(getId(), NameSet(getEntity(), "InitialConditionsEvent", part)),
   respawnEventReadToken(getId(), NameSet(getEntity(), "RespawnEvent", part)),
   fuelRewardEventReadToken(getId(), NameSet(getEntity(), "FuelRewardEvent", part)),
@@ -129,7 +132,12 @@ dynamics::dynamics(Entity* e, const char* part, const
   this->vehicleStateData.xyz << 0, 0, 0;
   this->vehicleStateData.uvw << 0, 0, 0;
   this->vehicleStateData.pqr << 0, 0, 0;
-  //this->vehicleStateData.quat << 0, 0, 0; see .hxx
+
+  this->vehicleStateData.quat.w() = 1.0;
+  this->vehicleStateData.quat.x() = 0;
+  this->vehicleStateData.quat.y() = 0;
+  this->vehicleStateData.quat.z() = 0;
+
   this->vehicleStateData.thrust = 0;
   this->vehicleStateData.mass = 100;
   //this->vehicleStateData.lgDelta = { }; see .hxx
@@ -271,6 +279,9 @@ void dynamics::doCalculation(const TimeSpec& ts)
       readRespawnEvent(ts);
       readFuelRewardEvent(ts);
       readThrusterForcesStream(ts);
+
+      bodyStep(ts);
+
       break;
     }
     default:
@@ -490,6 +501,44 @@ void dynamics::writeRefVehicleStateStream(const TimeSpec& ts) {
   // refVehivleStateWriter.data().Landing_gear_bool =
    
   return;
+}
+
+void dynamics::derivative(VectorE& xd, double dt)
+{
+    body.zeroForces();
+    body.addInertialGravity(gravity);
+
+    body.derivative(xd);
+
+    return;
+}
+
+const Vector& dynamics::X() const {
+  return this->body.X();
+}
+
+void dynamics::setState(const VectorE& newx) {
+  this->body.setState(newx);
+
+  return;
+}
+
+void dynamics::bodyStep(const TimeSpec& ts)
+{
+    double dt = ts.getDtInSeconds();
+
+    integrate_rungekutta(*this, workspace, dt);
+
+    this->vehicleStateData.uvw << this->body.X()[0], this->body.X()[1], this->body.X()[2];
+    this->vehicleStateData.xyz << this->body.X()[3], this->body.X()[4], this->body.X()[5];
+    this->vehicleStateData.pqr << this->body.X()[6], this->body.X()[7], this->body.X()[8];
+
+    this->vehicleStateData.quat.w() = this->body.X()[12];
+    this->vehicleStateData.quat.x() = this->body.X()[9];
+    this->vehicleStateData.quat.y() = this->body.X()[10];
+    this->vehicleStateData.quat.z() = this->body.X()[11];
+
+    return;
 }
 
 // Make a TypeCreator object for this module, the TypeCreator

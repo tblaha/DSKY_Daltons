@@ -1,12 +1,12 @@
 /* ------------------------------------------------------------------   */
-/*      item            : controller.cxx
-        made by         : tblaha
+/*      item            : SignalGenerator.cxx
+        made by         : hajo
         from template   : DusimeModuleTemplate.cxx
         template made by: Rene van Paassen
-        date            : Thu May 13 15:41:29 2021
+        date            : Fri May 28 18:02:49 2021
         category        : body file
         description     :
-        changes         : Thu May 13 15:41:29 2021 first version
+        changes         : Fri May 28 18:02:49 2021 first version
         template changes: 030401 RvP Added template creation comment
                           060512 RvP Modified token checking code
                           131224 RvP convert snap.data_size to
@@ -16,15 +16,14 @@
 */
 
 
-#define controller_cxx
+#define SignalGenerator_cxx
 // include the definition of the module class
-#include "controller.hxx"
+#include "SignalGenerator.hxx"
 
 // include the debug writing header. Warning and error messages
 // are on by default, debug and info can be selected by
 // uncommenting the respective defines
-#define D_MOD
-#define W_MOD
+//#define D_MOD
 //#define I_MOD
 #include <debug.h>
 
@@ -34,13 +33,11 @@
 #define DO_INSTANTIATE
 #include <dusime.h>
 
-#include <cmath>
-
 // class/module name
-const char* const controller::classname = "controller";
+const char* const SignalGenerator::classname = "signal-generator";
 
 // initial condition/trim table
-const IncoTable* controller::getMyIncoTable()
+const IncoTable* SignalGenerator::getMyIncoTable()
 {
   static IncoTable inco_table[] = {
     // enter pairs of IncoVariable and VarProbe pointers (i.e.
@@ -59,7 +56,7 @@ const IncoTable* controller::getMyIncoTable()
 }
 
 // parameters to be inserted
-const ParameterTable* controller::getMyParameterTable()
+const ParameterTable* SignalGenerator::getMyParameterTable()
 {
   static const ParameterTable parameter_table[] = {
     { "set-timing",
@@ -81,24 +78,13 @@ const ParameterTable* controller::getMyParameterTable()
     /* The table is closed off with NULL pointers for the variable
        name and MemberCall/VarProbe object. The description is used to
        give an overall description of the module. */
-       
-    { "Kp",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Kp),
-      "controller proportional gain"},
-    
-    { "Kd",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Kd),
-      "controller derivative gain"},
-    
     { NULL, NULL, "please give a description of this module"} };
 
   return parameter_table;
 }
 
 // constructor
-controller::controller(Entity* e, const char* part, const
+SignalGenerator::SignalGenerator(Entity* e, const char* part, const
                        PrioritySpec& ps) :
   /* The following line initialises the SimulationModule base class.
      You always pass the pointer to the entity, give the classname and the
@@ -112,56 +98,16 @@ controller::controller(Entity* e, const char* part, const
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
 
   // initialize the data you need in your simulation
-  // Input rates
-  myRollRate(0.0f),
-  myPitchRate(0.0f),
-  myYawRate(0.0f),
-  myThrottle(0.0f),
-  // Maximum angular rates
-  maxp(4.0f),
-  maxq(4.0f),
-  maxr(4.0f),
-  // Vehicle angular rates
-  myp(0.0f),
-  myq(0.0f),
-  myr(0.0f),
-  // Error
-  ep(0.0f),
-  eq(0.0f),
-  er(0.0f),
-  // Proportional control
-  Kp(0.0f),
-  Pp(0.0f),
-  Pq(0.0f),
-  Pr(0.0f),
-  // Derivative control
-  Kd(0.0f),
-  Dp(0.0f),
-  Dq(0.0f),
-  Dr(0.0f),
-  // Controller output
-  pout(0.0f),
-  qout(0.0f),
-  rout(0.0f),
-  // Angular accelerations
-  P(0.0f),
-  Q(0.0f),
-  R(0.0f),
-  // Moments of Inertia
-  Ixx(100.0f),
-  Iyy(100.0f),
-  Izz(100.0f),
-  // Output Forces and Moments
-  myMx(0.0f),
-  myMy(0.0f),
-  myMz(0.0f),
-  myFx(0.0f),
-  myFy(0.0f),
-  myFz(0.0f),
-  // Data storage
-  prev_pout(0.0f),
-  prev_qout(0.0f),
-  prev_rout(0.0f),
+  
+  // this->thrusterForcesData.F << 0, 0, 0; // first vehicleState implementation only
+  // this->thrusterForcesData.M << 0, 0, 0; // idem.
+
+  //vehicleStateData.xyz(0. , 0. , 0.),
+  //this->vehicleStateData.uvw << 0, 0, 0;
+  //this->vehicleStateData.pqr << 0, 0, 0;
+  //this->vehicleStateData.quat << 0, 0, 0; see .hxx                                                 
+  //this->vehicleStateData.thrust = 0;
+  //this->vehicleStateData.mass = 100;
 
   // initialize the data you need for the trim calculation
 
@@ -171,34 +117,24 @@ controller::controller(Entity* e, const char* part, const
   //           MyData::classname, 0, Channel::Events, Channel::ReadAllData),
   // w_mytoken(getId(), NameSet(getEntity(), MyData::classname, part),
   //           MyData::classname, "label", Channel::Continuous),
-  myControlPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimaryControls", part)),
-  myControlSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondaryControls", part)),
-
-  mySwitchPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimarySwitches", part)),
-  mySwitchSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondarySwitches", part)),
-  
-  myVehicleStateStreamReadToken(getId(), NameSet(getEntity(), "vehicleState", part)),
-  
-  myThrusterForcesStreamWriteToken(getId(), NameSet(getEntity(), "thrusterForces", part)),
-  
+  vehicleStateWriteToken(getId(), NameSet(getEntity(), "vehicleState", part)),
 
   // activity initialization
   myclock(),
   cb1(this, &_ThisModule_::doCalculation),
-  do_calc(getId(), "takes stick inputs and current rates. Outputs thruster forces and engine thrust command", &cb1, ps)
+  do_calc(getId(), "Generates a signal", &cb1, ps)
 {
-  // do the actions you need for the simulation
+  // do the actions you need for the simulation                                                     
 
   // connect the triggers for simulation
-  do_calc.setTrigger( myControlPrimaryStreamReadToken );
-  //do_calc.setTrigger( myclock );
+  do_calc.setTrigger( myclock );
 
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
   // trimCalculationCondition(/* fill in your trim triggering channels */);
 }
 
-bool controller::complete()
+bool SignalGenerator::complete()
 {
   /* All your parameters have been set. You may do extended
      initialisation here. Return false if something is wrong. */
@@ -206,13 +142,13 @@ bool controller::complete()
 }
 
 // destructor
-controller::~controller()
+SignalGenerator::~SignalGenerator()
 {
   //
 }
 
 // as an example, the setTimeSpec function
-bool controller::setTimeSpec(const TimeSpec& ts)
+bool SignalGenerator::setTimeSpec(const TimeSpec& ts)
 {
   // a time span of 0 is not acceptable
   if (ts.getValiditySpan() == 0) return false;
@@ -230,7 +166,7 @@ bool controller::setTimeSpec(const TimeSpec& ts)
 }
 
 // and the checkTiming function
-bool controller::checkTiming(const std::vector<int>& i)
+bool SignalGenerator::checkTiming(const std::vector<int>& i)
 {
   if (i.size() == 3) {
     new TimingCheck(do_calc, i[0], i[1], i[2]);
@@ -245,18 +181,13 @@ bool controller::checkTiming(const std::vector<int>& i)
 }
 
 // tell DUECA you are prepared
-bool controller::isPrepared()
+bool SignalGenerator::isPrepared()
 {
   bool res = true;
 
   // Example checking a token:
   // CHECK_TOKEN(w_somedata);
-  CHECK_TOKEN(myControlPrimaryStreamReadToken);
-  CHECK_TOKEN(myControlSecondaryStreamReadToken);
-  CHECK_TOKEN(mySwitchPrimaryStreamReadToken);
-  CHECK_TOKEN(mySwitchSecondaryStreamReadToken);
-  CHECK_TOKEN(myVehicleStateStreamReadToken);
-  CHECK_TOKEN(myThrusterForcesStreamWriteToken);
+  CHECK_TOKEN(vehicleStateWriteToken);
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
@@ -267,13 +198,13 @@ bool controller::isPrepared()
 }
 
 // start the module
-void controller::startModule(const TimeSpec &time)
+void SignalGenerator::startModule(const TimeSpec &time)
 {
   do_calc.switchOn(time);
 }
 
 // stop the module
-void controller::stopModule(const TimeSpec &time)
+void SignalGenerator::stopModule(const TimeSpec &time)
 {
   do_calc.switchOff(time);
 }
@@ -281,7 +212,7 @@ void controller::stopModule(const TimeSpec &time)
 // fill a snapshot with state data. You may remove this method (and the
 // declaration) if you specified to the SimulationModule that the size of
 // state snapshots is zero
-void controller::fillSnapshot(const TimeSpec& ts,
+void SignalGenerator::fillSnapshot(const TimeSpec& ts,
                               Snapshot& snap, bool from_trim)
 {
   // The most efficient way of filling a snapshot is with an AmorphStore
@@ -304,7 +235,7 @@ void controller::fillSnapshot(const TimeSpec& ts,
 // reload from a snapshot. You may remove this method (and the
 // declaration) if you specified to the SimulationModule that the size of
 // state snapshots is zero
-void controller::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
+void SignalGenerator::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
 {
   // access the data in the snapshot with an AmorphReStore object
   AmorphReStore s(snap.data, snap.getDataSize());
@@ -318,12 +249,11 @@ void controller::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
 // this routine contains the main simulation process of your module. You
 // should read the input channels here, and calculate and write the
 // appropriate output
-void controller::doCalculation(const TimeSpec& ts)
+void SignalGenerator::doCalculation(const TimeSpec& ts)
 {
   // check the state we are supposed to be in
   switch (getAndCheckState(ts)) {
   case SimulationState::HoldCurrent: {
-
     // only repeat the output, do not change the model state
 
     break;
@@ -331,135 +261,6 @@ void controller::doCalculation(const TimeSpec& ts)
 
   case SimulationState::Replay:
   case SimulationState::Advance: {
-
-
-      //
-      //READING FROM THE CHANNELS
-      //
-
-      //Reading from the primary control stream
-      try {
-          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts);
-          myRollRate = myControlPrimaryReader.data().ux*maxp;
-          myPitchRate = myControlPrimaryReader.data().uy*maxq;
-          myYawRate = myControlPrimaryReader.data().uz*maxr;
-          myThrottle = myControlPrimaryReader.data().uc;
-      }
-      catch (Exception& e) {
-          W_MOD(classname << "PrimaryControls read had an error @ " << ts << e);
-      }
-
-      //Reading from the secondary control stream and updating the zdot reference generator limits
-      try {
-          StreamReader<SecondaryControls> myControlSecondaryReader(myControlSecondaryStreamReadToken, ts);
-          z_ref_setting = myControlSecondaryReader.data().flap_setting;
-          update_max_zdot();
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "Sec Ctrl This channel had an error @ " << ts );
-      }
-
-      //Reading from the primary switch event
-      try {
-          StreamReader<PrimarySwitches>mySwitchPrimaryReader(mySwitchPrimaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error");
-      }
-
-      //Reading from the secondary switch stream
-      try {
-          StreamReader<SecondarySwitches> mySwitchSecondaryReader(mySwitchSecondaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error");
-      }
-
-      //Reading from the vehicle
-      try {
-          StreamReader<vehicleState> myVehicleStateReader(myVehicleStateStreamReadToken, ts-100);
-          myp = myVehicleStateReader.data().p;
-          myq = myVehicleStateReader.data().q;
-          myr = myVehicleStateReader.data().r;
-          myuvw = Eigen::Vector3f(
-            myVehicleStateReader.data().u, 
-            myVehicleStateReader.data().v, 
-            myVehicleStateReader.data().w);
-          myquat = Eigen::Quaternionf(
-            myVehicleStateReader.data().e0,
-            myVehicleStateReader.data().ex,
-            myVehicleStateReader.data().ey,
-            myVehicleStateReader.data().ez);
-          mass = myVehicleStateReader.data().mass;
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error @ " << ts );
-      }
-
-      //
-      //WRITING TO THE CHANNELS
-      //
-      
-      // Feedback loop
-      ep = myRollRate-myp;
-      eq = myPitchRate-myq;
-      er = myYawRate-myr;
-      
-      // Proportional part
-      Pp = Kp*ep;
-      Pq = Kp*eq;
-      Pr = Kp*er;
-      
-      // Derivative part
-      Dp = 1*Kd;
-      Dq = 1*Kd;
-      Dr = 1*Kd;
-      
-      // Controller output
-      pout = Pp+Dp;
-      qout = Pq+Dq;
-      rout = Pr+Dr;
-      
-      // Compute the angular accelerations
-      P = (pout-prev_pout)/ts.getDtInSeconds();
-      Q = (qout-prev_qout)/ts.getDtInSeconds();
-      R = (rout-prev_rout)/ts.getDtInSeconds();
-      
-      // Moments
-      myMx = Ixx*P;
-      myMy = Iyy*Q;
-      myMz = Izz*R;
-      
-      // Forces
-      myFx = 0.0f;
-      myFy = 0.0f;
-      myFz = -myThrottle*1;
-      
-      // Store variables
-      prev_pout = pout;
-      prev_qout = qout;
-      prev_rout = rout;
-
-      /**
-       * @brief Thrust controller
-       * 
-       */
-      myInertialVel = myquat * myuvw; /**< note: not normal multiplication! Hamiltonion products according to v' = qvq-1 */
-      nI = myquat * nB;
-      mu = (std::abs(nI[2]) < 0.1) ? std::copysign(0.1f, nI[2]) : nI[2];
-
-      float T_raw = mass / mu * ( zdot_P * (-gen_z_dot_ref(myThrottle) + myInertialVel[2]) + gM);
-
-      myFz = -clamp( T_raw, T_max*t_limits[0], T_max*t_limits[1] );
-
-      D_MOD("Current zdotref " << -gen_z_dot_ref(myThrottle));
-      D_MOD("Current zdot " << myInertialVel[2]);
-      D_MOD("Current mu " << mu);
-      //D_MOD("Current T_raw " << T_raw);
-      D_MOD("Current myFz" << myFz);
-      D_MOD("Current uc" << myThrottle);
-      D_MOD("Current max_zdot" << max_zdot);
-
     // access the input
     // example:
     // try {
@@ -496,16 +297,6 @@ void controller::doCalculation(const TimeSpec& ts)
 
   // write the output into the output channel, using the stream writer
   // y.data().var1 = something; ...
-  StreamWriter<thrusterForces> myThrusterForcesWriter(myThrusterForcesStreamWriteToken,ts);
-  //Writing the moments to the thrusterForces channel
-  myThrusterForcesWriter.data().Mx = myMx;
-  myThrusterForcesWriter.data().My = myMy;
-  myThrusterForcesWriter.data().Mz = myMz;
-
-  //Writing the forces to the thrusterForces channel
-  myThrusterForcesWriter.data().Fx = myFx;
-  myThrusterForcesWriter.data().Fy = myFy;
-  myThrusterForcesWriter.data().Fz = myFz;
 
   if (snapshotNow()) {
     // keep a copy of the model state. Snapshot sending is done in the
@@ -516,7 +307,7 @@ void controller::doCalculation(const TimeSpec& ts)
   }
 }
 
-void controller::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
+void SignalGenerator::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 {
   // read the event equivalent of the input data
   // example
@@ -570,5 +361,5 @@ void controller::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 // Make a TypeCreator object for this module, the TypeCreator
 // will check in with the scheme-interpreting code, and enable the
 // creation of modules of this type
-static TypeCreator<controller> a(controller::getMyParameterTable());
+static TypeCreator<SignalGenerator> a(SignalGenerator::getMyParameterTable());
 

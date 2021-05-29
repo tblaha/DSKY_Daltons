@@ -19,6 +19,8 @@
 #include <dusime.h>
 USING_DUECA_NS;
 
+#include <Eigen/Dense>
+
 // This includes headers for the objects that are sent over the channels
 #include "comm-objects.h"
 
@@ -44,7 +46,40 @@ private: // simulation data
   float myPitchRate;
   float myYawRate;
   float myThrottle;
-  
+  // Maximum angular rates
+  float maxp;
+  float maxq;
+  float maxr;
+  // Vehicle angular rates
+  float myp;
+  float myq;
+  float myr;
+  // Error
+  float ep;
+  float eq;
+  float er;
+  // Proportional control
+  float Kp;
+  float Pp;
+  float Pq;
+  float Pr;
+  // Derivative control
+  float Kd;
+  float Dp;
+  float Dq;
+  float Dr;
+  // Controller output
+  float pout;
+  float qout;
+  float rout;
+  // Angular accelerations
+  float P;
+  float Q;
+  float R;
+  // Moments of Inertia
+  float Ixx;
+  float Iyy;
+  float Izz;
   // Output Forces and Moments
   float myMx;
   float myMy;
@@ -52,10 +87,37 @@ private: // simulation data
   float myFx;
   float myFy;
   float myFz;
+  // Data storage
+  float prev_pout;
+  float prev_qout;
+  float prev_rout;
+
+  /**
+   * @brief Thrust controller internal variables
+   * 
+   */
+  Eigen::Quaternionf        myquat{};
+  Eigen::Vector3f           myuvw{};
+  Eigen::Vector3f           myInertialVel{};
+  const Eigen::Vector3f  nB{0,0,1}; /**< Quaternized normal vector in body coordinates */
+  Eigen::Vector3f        nI{}; /**< Quaternized normal vector in inertial coordinates */
+  const float T_max = 10000.0f; /**< Newtons */
+  const float gM = 1.62f; /**< moon gravity in m/s/s */
+  float mass; /**< current mass as given by the dynamics module */
+  const float t_limits[2] {0.15, 0.95};  /**< usable thrust region of the engine */
+  float T_ref {}; /**< to be calculated by the controller */
+  float max_zdot {};
+  float z_ref_setting {1.0f};
+  float zdot_P {2e-1};
+  float mu {1.0f};
+
+  void update_max_zdot() { max_zdot = z_ref_setting * z_ref_setting; }; /**< max zdot, depending on mode */
+
+  float gen_z_dot_ref(const float& stick) {return -max_zdot * 2.0f * (stick - 0.5f); }; /**< controller reference for decend rate (positive down) */
+
+  template<class T>
+  T clamp(const T& v, const T& lo, const T& hi) {return (v<lo) ? lo : (v>hi) ? hi : v;};
   
-  // Controller gains
-  float Kp;
-  float Kd;
 
 private: // trim calculation data
   // declare the trim calculation data needed for your simulation

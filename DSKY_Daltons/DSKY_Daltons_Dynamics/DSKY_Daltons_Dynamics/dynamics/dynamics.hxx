@@ -23,10 +23,12 @@ USING_DUECA_NS;
 #include "comm-objects.h"
 
 // include headers for functions/classes you need in the module
-#include "body.hxx"
+#include "RigidBody.hxx"
+#include "integrate_rungekutta.hxx"
 #include <Eigen/Dense>
 
 using Eigen::Vector3d;
+using Eigen::Quaterniond;
 
 struct ThrusterForcesData {
   Vector3d F;
@@ -36,7 +38,7 @@ struct ThrusterForcesData {
 struct VehicleStateData {
   Vector3d xyz;
   Vector3d uvw;
-  //Quaternion quat; need to read up on how this actually works in Eigen
+  Quaterniond quat;
   Vector3d pqr;
   float thrust;
   float mass;
@@ -57,7 +59,11 @@ class dynamics: public SimulationModule
 
   private: // simulation data
     // declare the data you need in your simulation
-    Body body;
+    RigidBody body;
+    RungeKuttaWorkspace workspace;
+    Vector3d gravity;
+
+    // Channel structs
     ThrusterForcesData thrusterForcesData;
     VehicleStateData vehicleStateData;
 
@@ -166,6 +172,11 @@ class dynamics: public SimulationModule
     void readThrusterForcesStream(const TimeSpec& ts);
     void writeVehicleStateStream(const TimeSpec& ts);
     void writeRefVehicleStateStream(const TimeSpec& ts);
+  public:
+    void derivative(VectorE& xd, double dt);
+    const Vector& X() const;
+    void setState(const VectorE& newx);
+    void bodyStep(const TimeSpec& ts);
 };
 
 #endif

@@ -13,7 +13,7 @@
 */
 
 static const char c_id[] =
-"$Id: F16HUD.cxx,v 1.6 2021/05/26 10:47:56 herwich Exp $";
+"$Id: F16HUD.cxx,v 1.8 2021/05/28 22:35:46 herwich Exp $";
 
 #define F16HUD_cxx
 // include the definition of the module class
@@ -23,7 +23,7 @@ static const char c_id[] =
 // error messages
 #define W_MOD
 #define E_MOD
-#define D_MOD
+// #define D_MOD
 #include <debug.h>
 
 // include additional files needed for your calculation here
@@ -194,7 +194,8 @@ bool F16HUD::isPrepared()
 
   // Example checking a token:
   CHECK_TOKEN(myvehicleStateReadToken);
-  D_MOD("CHECK TOKEN GOOD")
+
+  // D_MOD("HUD TOKEN GOOD")
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
@@ -236,47 +237,47 @@ void F16HUD::doCalculation(const TimeSpec& ts)
   //   // strange, there is no input. Should I try to continue or not?
   // }
   /* The above piece of code shows a block in which you try to catch 
-     error conditions (exceptions) to handle the case in which the input
-     data is lost. This is not always necessary, if you normally do not
-     foresee such a condition, and you don t mind being stopped when
-     it happens, forget about the try/catch blocks. */
+      error conditions (exceptions) to handle the case in which the input
+      data is lost. This is not always necessary, if you normally do not
+      foresee such a condition, and you don t mind being stopped when
+      it happens, forget about the try/catch blocks. */
 
   try {
     StreamReader<vehicleState> myvehicleStateReader(myvehicleStateReadToken, ts);
     your_data.ias = myvehicleStateReader.data().u;
     your_data.alt = myvehicleStateReader.data().z;
-	your_data.roll = myvehicleStateReader.data().ex;
-	your_data.heading = myvehicleStateReader.data().ey;
-	your_data.loadfactor = myvehicleStateReader.data().thrust;
+    your_data.roll = myvehicleStateReader.data().ex;
+    your_data.heading = myvehicleStateReader.data().ey;
+    your_data.loadfactor = myvehicleStateReader.data().thrust;
 
     // set data on windowed HUD
     fillData(window.getHUD(), your_data);
     
     window.redraw();
 
-#ifdef HAVE_OSG_WORLDVIEW
-    // set data on OSG callback HUD
-    if(osg_callback) {
-      fillData(osg_callback->getHUD(), y.data());
+  #ifdef HAVE_OSG_WORLDVIEW
+      // set data on OSG callback HUD
+      if(osg_callback) {
+        fillData(osg_callback->getHUD(), y.data());
+      }
+  #endif
+      
+    } catch (Exception& e) {
+      W_MOD(classname << " caught " << e << " @ " << ts);
     }
-#endif
     
-  } catch (Exception& e) {
-    W_MOD(classname << " caught " << e << " @ " << ts);
-  }
-  
-  // do the simulation or other calculations, one step
+    // do the simulation or other calculations, one step
 
-  // DUECA applications are data-driven. From the time a module is switched
-  // on, it should produce data, so that modules "downstreams" are 
-  // activated
-  // access your output channel(s)
-  // example
-  // StreamWriter<MyOutput> y(output_token, ts);
+    // DUECA applications are data-driven. From the time a module is switched
+    // on, it should produce data, so that modules "downstreams" are 
+    // activated
+    // access your output channel(s)
+    // example
+    // StreamWriter<MyOutput> y(output_token, ts);
 
-  // write the output into the output channel, using the stream writer
-  // y.data().var1 = something; ...
-} 
+    // write the output into the output channel, using the stream writer
+    // y.data().var1 = something; ...
+}
 
 void F16HUD::fillData(HUD& hud, const YourData& your_data)
 {
