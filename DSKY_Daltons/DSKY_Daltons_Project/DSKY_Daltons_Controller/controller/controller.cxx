@@ -117,10 +117,10 @@ controller::controller(Entity* e, const char* part, const
   myPitchRate(0.0f),
   myYawRate(0.0f),
   myThrottle(0.0f),
-  // Maximum angular rates
-  maxp(4.0f),
-  maxq(4.0f),
-  maxr(4.0f),
+  // Maximum angular rates are 10deg/2 (taken from http://www.stengel.mycpanel.princeton.edu/LM.pdf)
+  maxp(0.175f),
+  maxq(0.175f),
+  maxr(0.175f),
   // Vehicle angular rates
   myp(0.0f),
   myq(0.0f),
@@ -148,9 +148,9 @@ controller::controller(Entity* e, const char* part, const
   Q(0.0f),
   R(0.0f),
   // Moments of Inertia
-  Ixx(100.0f),
-  Iyy(100.0f),
-  Izz(100.0f),
+  Ixx(20800.0f),
+  Iyy(17400.0f),
+  Izz(16500.0f),
   // Output Forces and Moments
   myMx(0.0f),
   myMy(0.0f),
@@ -381,6 +381,14 @@ void controller::doCalculation(const TimeSpec& ts)
           myp = myVehicleStateReader.data().p;
           myq = myVehicleStateReader.data().q;
           myr = myVehicleStateReader.data().r;
+          // Compute the angular accelerations
+          P = (myp-myp_prev)/ts.getDtInSeconds();
+          Q = (myq-myq_prev)/ts.getDtInSeconds();
+          R = (myr-myr_prev)/ts.getDtInSeconds();
+          myp_prev = myp;
+          myq_prev = myq;
+          myr_prev = myr;
+
           myuvw = Eigen::Vector3f(
             myVehicleStateReader.data().u, 
             myVehicleStateReader.data().v, 
@@ -401,40 +409,35 @@ void controller::doCalculation(const TimeSpec& ts)
       //
       
       // Feedback loop
-      ep = myRollRate-myp;
-      eq = myPitchRate-myq;
-      er = myYawRate-myr;
+      ep = myp - myRollRate;
+      eq = myq - myPitchRate;
+      er = myr - myYawRate;
       
       // Proportional part
-      Pp = Kp*ep;
-      Pq = Kp*eq;
-      Pr = Kp*er;
+      Pp = -Kp*ep;
+      Pq = -Kp*eq;
+      Pr = -Kp*er;
       
       // Derivative part
-      Dp = 1*Kd;
-      Dq = 1*Kd;
-      Dr = 1*Kd;
+      Dp = Kd*P;
+      Dq = Kd*Q;
+      Dr = Kd*R;
       
       // Controller output
-      pout = Pp+Dp;
-      qout = Pq+Dq;
-      rout = Pr+Dr;
-      
-      // Compute the angular accelerations
-      P = (pout-prev_pout)/ts.getDtInSeconds();
-      Q = (qout-prev_qout)/ts.getDtInSeconds();
-      R = (rout-prev_rout)/ts.getDtInSeconds();
+      myMx = clamp(Ixx * (Pp+Dp), -4*700.0f, 4*700.0f);
+      myMy = clamp(Iyy * (Pq+Dq), -4*700.0f, 4*700.0f);
+      myMz = clamp(Izz * (Pr+Dr), -4*750.0f, 4*750.0f);
       
       // Moments
-      myMx = Ixx*P;
-      myMy = Iyy*Q;
-      myMz = Izz*R;
+      //myMx = Ixx*P;
+      //myMy = Iyy*Q;
+      //myMz = Izz*R;
       
       // Forces
       myFx = 0.0f;
       myFy = 0.0f;
       myFz = -myThrottle*1;
-      
+
       // Store variables
       prev_pout = pout;
       prev_qout = qout;
@@ -453,12 +456,16 @@ void controller::doCalculation(const TimeSpec& ts)
       myFz = -clamp( T_raw, T_max*t_limits[0], T_max*t_limits[1] );
 
       D_MOD("Current zdotref " << -gen_z_dot_ref(myThrottle));
-      D_MOD("Current zdot " << myInertialVel[2]);
+      //D_MOD("Current zdot " << myInertialVel[2]);
       D_MOD("Current mu " << mu);
       //D_MOD("Current T_raw " << T_raw);
       D_MOD("Current myFz" << myFz);
-      D_MOD("Current uc" << myThrottle);
-      D_MOD("Current max_zdot" << max_zdot);
+
+      D_MOD("Current myMx" << myMx);
+      D_MOD("Current myMy" << myMy);
+      D_MOD("Current myMz" << myMz);
+      //D_MOD("Current uc" << myThrottle);
+      //D_MOD("Current max_zdot" << max_zdot);
 
     // access the input
     // example:

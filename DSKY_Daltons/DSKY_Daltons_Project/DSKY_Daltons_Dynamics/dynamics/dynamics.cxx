@@ -100,7 +100,7 @@ dynamics::dynamics(Entity* e, const char* part, const
   // initialize the data you need in your simulation
   body(1, 1, 1, 1, 1, 1, 1, 0),
   workspace(13),
-  gravity( 0, 9.81, 0),
+  gravity(0, 0, 1.62),
 
   // initialize the data you need for the trim calculation
 

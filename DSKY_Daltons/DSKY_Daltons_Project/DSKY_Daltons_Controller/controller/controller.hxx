@@ -54,6 +54,9 @@ private: // simulation data
   float myp;
   float myq;
   float myr;
+  float myp_prev {0};
+  float myq_prev {0};
+  float myr_prev {0};
   // Error
   float ep;
   float eq;
