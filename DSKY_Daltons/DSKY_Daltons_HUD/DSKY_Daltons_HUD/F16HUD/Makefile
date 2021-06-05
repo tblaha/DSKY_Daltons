@@ -13,10 +13,10 @@
 
 # OSG WorldView includes
 # uncomment the next lines after introducing WorldView
-#OSG_WORLDVIEW_INCLUDES = \
-#	-I../../WorldView/OSGViewer \
-#	-I../../WorldView/WorldView \
-#	-DHAVE_OSG_WORLDVIEW
+OSG_WORLDVIEW_INCLUDES = \
+	-I../../WorldView/OSGViewer \
+	-I../../WorldView/WorldView \
+	-DHAVE_OSG_WORLDVIEW
 
 # if needed, add extra defines or the include statements to extra header
 # files you need

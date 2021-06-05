@@ -12,3 +12,11 @@ DATADIR=../../run-data
 if [ ! -d runlogs ]; then
    mkdir runlogs
 fi
+
+if [ ! -d models ]; then
+   mkdir models
+fi
+
+cd models
+   ln -sf ../../../../../SimCourse2021/3DModels/* .
+cd ..

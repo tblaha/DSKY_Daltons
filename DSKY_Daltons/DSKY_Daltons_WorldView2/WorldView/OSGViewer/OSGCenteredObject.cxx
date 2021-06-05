@@ -41,15 +41,21 @@ void OSGCenteredObject::iterate(TimeTickType ts,
                                 const BaseObjectMotion& base,
                                 double late)
 {
+  BaseObjectMotion obs(base);
+  
   if (base.dt != 0.0 && late != 0.0) {
-    BaseObjectMotion o2(base); o2.extrapolate(late);
-    transform->setPosition(AxisTransform::osgPos(o2.xyz));
-    transform->setAttitude(AxisTransform::osgQuat(o2.attitude_q));
+    obs.extrapolate(late);
   }
-  else {
-    transform->setPosition(AxisTransform::osgPos(base.xyz));
-    transform->setAttitude(AxisTransform::osgQuat(base.attitude_q));
-  }
+
+  // fixate 
+  if(position[0] != 0.0) obs.xyz[0] = position[0];
+  if(position[1] != 0.0) obs.xyz[1] = position[1];
+  if(position[2] != 0.0) obs.xyz[2] = position[2];
+ 
+  // set position
+  transform->setPosition(AxisTransform::osgPos(obs.xyz));
+  //transform->setAttitude(AxisTransform::osgQuat(obs.attitude_q));
+  
 }
 
 static SubContractor<OSGObjectTypeKey, OSGCenteredObject> 

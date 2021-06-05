@@ -28,6 +28,8 @@ USING_DUECA_NS;
 #include "F16HUDOSGCallback.hxx"
 #endif
 
+typedef vehicleState YourData;
+
 /** A simulation module.
     
     The instructions to create an module of this class from the Scheme
@@ -41,14 +43,14 @@ private: // simulation data
   // declare the data you need in your simulation
   F16HUDWindow window;
 
-  struct YourData{
+  /* struct YourData{
 	  float ias;
 	  float alt;
 	  float pitch;
 	  float roll;
 	  float heading;
 	  float loadfactor;
-  }your_data;
+  }your_data; */
 
 #ifdef HAVE_OSG_WORLDVIEW
   F16HUDOSGCallback *osg_callback;
@@ -129,7 +131,8 @@ public: // the member functions that are called for activities
   //private:
 public:
   /** fill a HUD object from channel. */
-  static void fillData(HUD&, const YourData&);
+  //static void fillData(HUD&, const YourData&);
+  static void fillData(HUD&, const vehicleState&);
 };
 
 #endif

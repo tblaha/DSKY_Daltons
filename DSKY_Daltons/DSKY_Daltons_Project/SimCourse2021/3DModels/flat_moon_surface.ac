@@ -1,0 +1,25 @@
+AC3Db
+MATERIAL "moon_surface" rgb 0.800 0.800 0.800  amb 0.800 0.800 0.800  emis 0.800 0.800 0.800  spec 0.500 0.500 0.500  shi 77 trans 0.000
+OBJECT world
+name "Blender_exporter_v3.3__flat_moon_surface.ac"
+kids 1
+OBJECT poly
+name "moon_surface"
+data 12
+moon_surface
+crease 40.0
+texture "flat_moon_surface.png"
+numvert 4
+-11000  -11000 0
+11000  -11000 0
+-11000  11000 0
+11000  11000 0
+numsurf 1
+SURF 0X20
+mat 0
+refs 4
+0 0 0
+1 1 0
+3 1 1
+2 0 1
+kids 0

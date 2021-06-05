@@ -76,10 +76,10 @@ use_WorldView = False;
 gamma = 0.25;
 
 if this_node_id == ecs_node:
-    mymods.append(dueca.Module(
-        "unit_tester", "", sim_priority).param(
-            set_timing = sim_timing,
-            check_timing = (10000, 20000)))
+    #mymods.append(dueca.Module(
+    #    "unit_tester", "", sim_priority).param(
+    #        set_timing = sim_timing,
+    #        check_timing = (10000, 20000)))
 
     mymods.append(dueca.Module(
         "controller", "", sim_priority).param(

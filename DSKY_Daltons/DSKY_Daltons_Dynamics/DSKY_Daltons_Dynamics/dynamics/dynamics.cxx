@@ -279,6 +279,7 @@ void dynamics::doCalculation(const TimeSpec& ts)
   // check the state we are supposed to be in
   switch (getAndCheckState(ts)) {
     case SimulationState::HoldCurrent: {
+
       break;
     }
     case SimulationState::Replay:
@@ -301,6 +302,7 @@ void dynamics::doCalculation(const TimeSpec& ts)
 
   writeVehicleStateStream(ts);
   writeRefVehicleStateStream(ts);
+  writeObjectMotionStream(ts);
 
   if (snapshotNow()) {
   }
@@ -471,7 +473,7 @@ void dynamics::writeVehicleStateStream(const TimeSpec& ts) {
   vehicleStateWriter.data().thrust = this->vehicleStateData.thrust;
 
   // see .hxx
-  // vehicleStateWriter.data().lgDelta1 = this->vehicleStateData.lgDelta(0);
+  // vehicleStateWriter.data().lgDelta1 = this->.lgDelta(0);
   // vehicleStateWriter.data().lgDelta2 = this->vehicleStateData.lgDelta(1);
   // vehicleStateWriter.data().lgDelta3 = this->vehicleStateData.lgDelta(2);
   // vehicleStateWriter.data().lgDelta4 = this->vehicleStateData.lgDelta(2);
@@ -499,6 +501,11 @@ void dynamics::writeObjectMotionStream(const TimeSpec& ts) {
     ObjectMotionWriter.data().omega[0] = this->vehicleStateData.pqr(0);
     ObjectMotionWriter.data().omega[1] = this->vehicleStateData.pqr(1);
     ObjectMotionWriter.data().omega[2] = this->vehicleStateData.pqr(2);
+
+    ObjectMotionWriter.data().attitude_q[0] = this->vehicleStateData.quat.w();
+    ObjectMotionWriter.data().attitude_q[1] = this->vehicleStateData.quat.x();
+    ObjectMotionWriter.data().attitude_q[2] = this->vehicleStateData.quat.y();
+    ObjectMotionWriter.data().attitude_q[3] = this->vehicleStateData.quat.z();
 
     // see .hxx
     // vehicleStateWriter.data().lgDelta1 = this->vehicleStateData.lgDelta(0);

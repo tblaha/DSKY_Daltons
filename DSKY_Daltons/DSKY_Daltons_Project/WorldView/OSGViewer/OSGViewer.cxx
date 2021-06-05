@@ -509,6 +509,11 @@ void OSGViewer::setBase(TimeTickType tick, const BaseObjectMotion& ownm,
   for (auto &obj : active_objects) {
     obj.second->iterate(tick, ownm, late);
   }
+
+  // static objects need updates too (centered)
+  for (auto &obj : static_objects) {
+    obj->iterate(tick, ownm, late);
+  }
 }
 
 bool OSGViewer::createControllable

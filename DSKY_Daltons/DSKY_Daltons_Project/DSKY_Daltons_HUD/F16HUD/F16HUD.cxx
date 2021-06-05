@@ -13,7 +13,7 @@
 */
 
 static const char c_id[] =
-"$Id: F16HUD.cxx,v 1.10 2021/05/29 14:07:22 herwich Exp $";
+"$Id: F16HUD.cxx,v 1.12 2021/06/05 13:37:43 tblaha Exp $";
 
 #define F16HUD_cxx
 // include the definition of the module class
@@ -244,23 +244,23 @@ void F16HUD::doCalculation(const TimeSpec& ts)
 
   try {
     StreamReader<vehicleState> myvehicleStateReader(myvehicleStateReadToken, ts);
-    your_data.ias = myvehicleStateReader.data().u; //full steam ahead
+/*     your_data.ias = myvehicleStateReader.data().u; //full steam ahead
     // myvehicleStateReader.data().u; //
     your_data.alt = -myvehicleStateReader.data().z; //negative z is upwards
     your_data.roll = myvehicleStateReader.data().phi;
     your_data.pitch = myvehicleStateReader.data().theta;
     your_data.heading = myvehicleStateReader.data().psi;
     your_data.loadfactor = myvehicleStateReader.data().thrust;
-
+ */
     // set data on windowed HUD
-    fillData(window.getHUD(), your_data);
+    fillData(window.getHUD(), myvehicleStateReader.data());
     
     window.redraw();
 
   #ifdef HAVE_OSG_WORLDVIEW
       // set data on OSG callback HUD
       if(osg_callback) {
-        fillData(osg_callback->getHUD(), y.data());
+        fillData(osg_callback->getHUD(), myvehicleStateReader.data());
       }
   #endif
       
@@ -281,15 +281,16 @@ void F16HUD::doCalculation(const TimeSpec& ts)
     // y.data().var1 = something; ...
 }
 
-void F16HUD::fillData(HUD& hud, const YourData& your_data)
+//void F16HUD::fillData(HUD& hud, const YourData& your_data)
+void F16HUD::fillData(HUD& hud, const vehicleState& myVS)
 {
-    hud.SetSpeedTapeSpeedIAS(your_data.ias);
-    hud.SetAltTapeAltitude(your_data.alt);
-    hud.SetPitchLadderPitchAngle(your_data.pitch);
-    hud.SetPitchLadderRollAngle(your_data.roll);
-    hud.SetBankIndicatorRollAngle(your_data.roll);
-    hud.SetHeadingTapeHeading(your_data.heading);
-    hud.SetAircraftReferenceNz(your_data.loadfactor);
+    hud.SetSpeedTapeSpeedIAS(myVS.u);
+    hud.SetAltTapeAltitude(-myVS.z);
+    hud.SetPitchLadderPitchAngle(myVS.theta);
+    hud.SetPitchLadderRollAngle(myVS.phi);
+    hud.SetBankIndicatorRollAngle(myVS.phi);
+    hud.SetHeadingTapeHeading(myVS.psi);
+    hud.SetAircraftReferenceNz(myVS.thrust);
 }
 
 // Make a TypeCreator object for this module, the TypeCreator

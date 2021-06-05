@@ -43,7 +43,7 @@ sim_priority = dueca.PrioritySpec(2, 0)
 sim_timing = dueca.TimeSpec(0, 100)
 
 ## for now, display on 50 Hz
-display_timing = dueca.TimeSpec(0, 200)
+display_timing = dueca.TimeSpec(0, 1000)
 
 ## log a bit more economical, 25 Hz
 log_timing = dueca.TimeSpec(0, 400)
@@ -70,8 +70,8 @@ if this_node_id == ecs_node:
 # modules for your project (example)
 mymods = []
 
-use_gui_stick = True;
-use_WorldView = False;
+use_gui_stick = False;
+use_WorldView = True;
 
 gamma = 0.25;  # curve parameter for exponential input curve. see https://www.desmos.com/calculator/ekbtvpdhfy
 
@@ -178,7 +178,7 @@ if this_node_id == ecs_node:
             # u0, y0, u1, y1 etc. Finds u closest to input value, returns
             # corresponding output value
         ),
-        
+
         # Supply a stick-value object that will convert one or more of the
         # stick's inputs to the control inputs. Remember to supply a name for
         # this stick value that matches one of the input names
@@ -191,14 +191,14 @@ if this_node_id == ecs_node:
         "world-view","",admin_priority).param(
             #module settings
             set_timing = display_timing,
-            check_timing = (10000, 20000),
+            check_timing = (20000, 35000),
             claim_thread = False,
             restore_context = False,
             predict_dt = 0.0,
             predict_dt_max = 0.0,
             initial_camera = (0.0,0.0,-10.0,0.0,0.0,0.0),
             add_world_information_channel =
-            ("ObjectMotion://world","HUDData://PHLAB"),
+            ("ObjectMotion://world","vehicleState://DSKY_Daltons"),
             #viewer backend, with its settings
                 set_viewer     = dueca.OSGViewer().param(
                 set_resourcepath   = "models",
@@ -206,10 +206,10 @@ if this_node_id == ecs_node:
 
                 #first main windows
                 add_window          = "main window",
-                window_size_pos     = (400, 300, 0, 0),
+                window_size_pos     = (1200, 1200, 0, 0),
                 window_x_screen     = "OpenSceneGraph Viewer",
                 add_viewport        = "main viewport",
-                viewport_pos_size   = (0, 0, 400, 300),
+                viewport_pos_size   = (0, 0, 1200, 1200),
                 viewport_window     = "main window",
                 eye_offset          = (0, 0, 0, 0, 0, 0)).param(
 
@@ -223,19 +223,26 @@ if this_node_id == ecs_node:
                 #objects in the scene
                 # 1) terrain
                 add_object_class_data = ("static:world", "world",
-                 "static", "lz.osg"),
+                 "static", "flat_moon_surface.ac"),
                 add_object_class_coordinates = (0.0, 0.0, 0.0),
                 static_object         = ("static:world","world")).param(
+		
+		#2) skydome
+		add_object_class_data
+		= ("static:spacedome", "spacedome", "static", "spacedome.ac"),
+		add_object_class_coordinates= (0.0, 0.0, 1000.0),
+		static_object= ("static:spacedome", "spacedome")).param(
 
-                # 2) sun
+                # 3) sun
                 add_object_class_data = ("static:sunlight", "sunlight",
                 "static-light"),
                 add_object_class_coordinates = (0.08, 0.08, 0.08, 1,
                  0.08, 0.08, 0.08, 1, 0.0, 0.0, 0.0, 1, 0.4, 0.0, 1.0, 0, 0, 0, 0, 0.2, 0, 0),
                 static_object = ("static:sunlight","sunlight")
 
+                # 4) HUD
                 ).param(
-                    add_object_class_data = ("HUDData", "hud", "f16hud", "main viewport"),
+                    add_object_class_data = ("vehicleState", "hud", "f16hud", "main viewport"),
                     set_frustum           = (0.5, 10000, 30),
                     set_bg_color          = (0, 0, 1),
                     set_fog               = (2, 0.0, 0.0, 0.0, 0.5, 1.0, 10000.0, 100000.0),
@@ -265,10 +272,10 @@ if this_node_id == ecs_node:
             set_timing = sim_timing,
             check_timing = (10000, 20000)))
 
-    #mymods.append(dueca.Module(
-    #    "F16HUD", "", sim_priority).param(
-    #        set_timing = sim_timing,
-    #        check_timing = (10000, 20000)))
+    mymods.append(dueca.Module(
+       "F16HUD", "", sim_priority).param(
+           set_timing = sim_timing,
+           check_timing = (10000, 20000)))
 
     # Uncomment and adapt for web-based graph, see DUECA documentation.
     # This also serves the static files for the default plotting application
