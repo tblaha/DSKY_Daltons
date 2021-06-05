@@ -50,12 +50,19 @@ local-all:
 # Put additional commands to be executed for "make depend" here, for example
 # interface files generated with glade?
 local-depend:
+	python3 ./gen_tests.py
 
 # Put additional commands to be executed for "make clean" here
 local-clean:
+	rm tests.hxx
+	rm comm-objects.lst
+	rm comm-objects.h
 
 # Put additional commands to be executed for "make mrproper" here
 local-mrproper:
+	rm tests.hxx
+	rm comm-objects.lst
+	rm comm-objects.h
 
 # Put additional commands for locally generated code here
 local-generated:

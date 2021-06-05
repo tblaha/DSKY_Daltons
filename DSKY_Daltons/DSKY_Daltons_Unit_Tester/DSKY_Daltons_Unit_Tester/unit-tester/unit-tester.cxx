@@ -126,7 +126,7 @@ unit_tester::unit_tester(Entity* e, const char* part, const
   //trimCalculationCondition(/* fill in your trim triggering channels */);
 
   // tester stuff
-  _logfile.open(filename);
+  _logfile.open(_filename);
 }
 
 bool unit_tester::complete()
@@ -291,7 +291,8 @@ void unit_tester::doCalculation(const TimeSpec& ts)
     throw CannotHandleState(getId(),GlobalId(), "state unhandled");
   }
 
-  perform_tests(ts, hold);
+  //perform_tests(ts, hold);
+  perform_csv_tests(ts, hold);
 
   // DUECA applications are data-driven. From the time a module is switched
   // on, it should produce data, so that modules "downstreams" are

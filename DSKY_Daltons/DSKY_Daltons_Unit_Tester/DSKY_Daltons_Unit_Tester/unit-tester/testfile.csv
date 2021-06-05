@@ -1,0 +1,6 @@
+Time [s],vehicleState.e0,vehicleState.ex,vehicleState.ey,vehicleState.ez,vehicleState.z,vehicleState.u,vehicleState.v,vehicleState.w,vehicleState.mass,PrimaryControls.uc
+0,1,0,0,0,100,0,0,0,3000,0
+0.5,1,0,0,0,100,0,0,-1,3000,0
+1,1,0,0,0,100,0,0,-10,3000,0
+1.5,1,0,0,0,100,0,0,-5,3000,0
+2,1,0,0,0,100,0,0,0,3000,0

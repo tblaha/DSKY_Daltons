@@ -9,6 +9,7 @@ Author: Till Blaha 2021
 # pip3 install jinja2 jinja2-ansible-filters
 from jinja2 import Template, StrictUndefined, Environment, FileSystemLoader
 import yaml
+import csv
 
 # configure jinja2
 templateLoader = FileSystemLoader(searchpath="./")
@@ -19,23 +20,27 @@ templateEnv = Environment(
     undefined=StrictUndefined,
     )
 
-# load the template files
-TEMPLATE_FILE_hxx = "tests.hxx.jinja"
-template_hxx = templateEnv.get_template(TEMPLATE_FILE_hxx)
-TEMPLATE_FILE_lst = "comm-objects.lst.jinja"
-template_lst = templateEnv.get_template(TEMPLATE_FILE_lst)
-
 # open the data file
 with open("tests.yaml") as datafile:
     yaml_data = yaml.safe_load(datafile)
 
-# render the template
-outputText_hxx = template_hxx.render(yaml_data)
-outputText_lst = template_lst.render(yaml_data)
+# read variable names from first line in csv (cell A1 is always time, no matter the name)
+for i, csvtest in enumerate(yaml_data['csvtests']):
+    with open(csvtest['input'], mode='r') as infile:
+        reader = csv.reader(infile)
+        for line in reader:
+            # add variable names defined in the first row of the CSV to the yaml data, then break out the for loop
+            yaml_data['csvtests'][i]['variables'] = line[1:]
+            break
 
-# print to file
-with open("tests.hxx", "w") as outfile:
-    outfile.write(outputText_hxx)
+# load the template files
+TEMPLATE_FILES = ["tests.hxx.jinja", "comm-objects.lst.jinja"]
+for TEMP_FILE in TEMPLATE_FILES:
+    template = templateEnv.get_template(TEMP_FILE)
 
-with open("comm-objects.lst", "w") as outfile:
-    outfile.write(outputText_lst)
+    # render the template
+    outputText = template.render(yaml_data)
+
+    # print to file
+    with open(TEMP_FILE.replace(".jinja", ""), "w") as outfile:
+        outfile.write(outputText)

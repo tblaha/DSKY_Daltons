@@ -83,7 +83,7 @@ if this_node_id == ecs_node:
             Kp = 1.0,
             Kd = 0.0,
             Tp = 1.0,
-            z_ref_mult = 2.0,
+            z_ref_mult = 1.0,
     ))
 
     # Uncomment and adapt for web-based graph, see DUECA documentation.

@@ -1,5 +1,15 @@
 # this file contains a list of all communicated objects needed by this
 # specific module
 # specify these with the .dco extension, examples:
-# DSKY_Daltons_Unit_Tester/comm-objects/MyDataObject.dco
+# DSKY_Daltons_Controller/comm-objects/MyDataObject.dco
 # Generic/comm-objects/PrimaryControls.dco
+
+DSKY_Daltons_Project/comm-objects/vehicleState.dco
+SimCourse2021/comm-objects/PrimaryControls.dco
+SimCourse2021/comm-objects/PrimarySwitches.dco
+SimCourse2021/comm-objects/SecondaryControls.dco
+SimCourse2021/comm-objects/SecondarySwitches.dco
+
+
+DSKY_Daltons_Project/comm-objects/thrusterForces.dco
+
