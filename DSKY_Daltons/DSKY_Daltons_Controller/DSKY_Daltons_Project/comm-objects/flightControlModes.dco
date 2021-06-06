@@ -1,5 +1,12 @@
-(Type int)
+(Type float)
+(Type bool)
 
-(Event flightControlModes
-    (int rate_mode_on)
+(Stream flightControlModes
+    (float max_rate_sp (Default 10.0f))
+    (float vertical_rate_sp (Default 0.0f))
+    (float phi_d (Default 0.0f))
+    (float theta_d (Default 0.0f))
+    (float psi_d (Default 0.0f))
+    (bool sat_pos (Default false))
+    (bool sat_neg (Default false))
 )

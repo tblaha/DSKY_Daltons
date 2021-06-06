@@ -47,9 +47,7 @@ private: // simulation data
   float myYawRate;
   float myThrottle;
   // Maximum angular rates
-  float maxp;
-  float maxq;
-  float maxr;
+  float rref;
   // Vehicle angular rates
   float myp;
   float myq;
@@ -149,6 +147,7 @@ private: // channel access
 
   //Token to write to thruster force
   StreamChannelWriteToken<thrusterForces> myThrusterForcesStreamWriteToken;
+  StreamChannelWriteToken<flightControlModes> myflightControlModesToken;
 
 
 private: // activity allocation

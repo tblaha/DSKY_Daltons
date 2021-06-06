@@ -70,7 +70,7 @@ if this_node_id == ecs_node:
 # modules for your project (example)
 mymods = []
 
-use_gui_stick = False;
+use_gui_stick = True;
 use_WorldView = True;
 
 gamma = 0.25;  # curve parameter for exponential input curve. see https://www.desmos.com/calculator/ekbtvpdhfy
@@ -198,7 +198,7 @@ if this_node_id == ecs_node:
             predict_dt_max = 0.0,
             initial_camera = (0.0,0.0,-10.0,0.0,0.0,0.0),
             add_world_information_channel =
-            ("ObjectMotion://world","vehicleState://DSKY_Daltons"),
+            ("ObjectMotion://world","HUDbundle://DSKY_Daltons"),
             #viewer backend, with its settings
                 set_viewer     = dueca.OSGViewer().param(
                 set_resourcepath   = "models",
@@ -242,7 +242,7 @@ if this_node_id == ecs_node:
 
                 # 4) HUD
                 ).param(
-                    add_object_class_data = ("vehicleState", "hud", "f16hud", "main viewport"),
+                    add_object_class_data = ("HUDbundle", "hud", "f16hud", "main viewport"),
                     set_frustum           = (0.5, 10000, 30),
                     set_bg_color          = (0, 0, 1),
                     set_fog               = (2, 0.0, 0.0, 0.0, 0.5, 1.0, 10000.0, 100000.0),
@@ -258,6 +258,7 @@ if this_node_id == ecs_node:
             check_timing = (10000, 20000),
             Kp = 10.0,
             Kd = 0.0,
+            rref = 15.0 * 3.1415/180, # max rate reference in rad per sec
             Tp = 10.0,
             z_ref_mult = 2.0,
             ))
@@ -273,9 +274,14 @@ if this_node_id == ecs_node:
             check_timing = (10000, 20000)))
 
     mymods.append(dueca.Module(
-       "F16HUD", "", sim_priority).param(
-           set_timing = sim_timing,
-           check_timing = (10000, 20000)))
+        "hudbundler", "", sim_priority).param(
+            set_timing = sim_timing,
+            check_timing = (10000, 20000)))
+
+    # mymods.append(dueca.Module(
+    #    "F16HUD", "", sim_priority).param(
+    #        set_timing = sim_timing,
+    #        check_timing = (10000, 20000)))
 
     # Uncomment and adapt for web-based graph, see DUECA documentation.
     # This also serves the static files for the default plotting application

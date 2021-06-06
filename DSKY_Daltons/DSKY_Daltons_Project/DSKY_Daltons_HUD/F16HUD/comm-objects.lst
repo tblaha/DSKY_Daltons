@@ -2,6 +2,6 @@
 # specific module
 # specify these with the .dco extension, examples:
 # SimCourse2021/comm-objects/MyDataObject.dco
-DSKY_Daltons_Project/comm-objects/vehicleState.dco
+DSKY_Daltons_Project/comm-objects/HUDbundle.dco
 DSKY_Daltons_Project/comm-objects/flightControlModes.dco
 DSKY_Daltons_Project/comm-objects/setpoints.dco

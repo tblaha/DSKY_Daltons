@@ -54,6 +54,8 @@ class HUD: public gl2DObject
       inline void ShowSpeedTape(bool speed) {show_speedtape=speed;}
       inline void SetSpeedTapePosition(double x, double y) {theSpeedTape->SetScreenPosition(x, y);}
       inline void SetSpeedTapeSpeedIAS(double speedIAS) {theSpeedTape->SetSpeedIAS(speedIAS);} // m/s
+      inline void SetSpeedTapeLateralSpeed(double speedv) {theSpeedTape->SetLateralSpeed(speedv);} // m/s
+      inline void SetSpeedTapeSpeedBug(double speedb) {theSpeedTape->SetSpeedBug(speedb);} // m/s
 
       // Altitude Tape
       inline void ShowAltTape(bool alt) {show_alttape=alt;}
@@ -85,6 +87,7 @@ class HUD: public gl2DObject
       // inline void SetAircraftReferenceVertFOV(double vertFOV) {theAircraftReference->SetVertFOV(vertFOV);}  // deg
       // inline void SetAircraftReferenceScreenHeight(double height) {theAircraftReference->SetScreenHeight(height);}  // drawing units
       inline void SetAircraftReferenceGunCrossPitchAngle(double theta0) {theAircraftReference->SetGunCrossPitchAngle(theta0);} // rad
+      inline void SetAircraftReferenceLandingSite(double xdiff, double ydiff, double yaw) {theAircraftReference->SetLandingSiteDifference(xdiff, ydiff, yaw);} // rad
       inline void SetAircraftReferenceNz(double nz) {theAircraftReference->SetNz(nz);} // g's
       inline void SetAircraftReferenceNzMax(double nz_max) {theAircraftReference->SetNzMax(nz_max);} // g's //[HJD 24/04/2006]
       inline void ResetAircraftReferenceNz(void) {theAircraftReference->ResetNz();}

@@ -13,7 +13,7 @@
 */
 
 static const char c_id[] =
-"$Id: F16HUD.cxx,v 1.12 2021/06/05 13:37:43 tblaha Exp $";
+"$Id: F16HUD.cxx,v 1.16 2021/06/06 00:06:22 tblaha Exp $";
 
 #define F16HUD_cxx
 // include the definition of the module class
@@ -97,7 +97,7 @@ F16HUD::F16HUD(Entity* e, const char* part, const
   // initialize the channel access tokens
   // example
   // my_token(getId(), NameSet(getEntity(), "MyData", part)),
-  myvehicleStateReadToken(getId(), NameSet(getEntity(), "vehicleState", part)),
+  myHUDbundleReadToken(getId(), NameSet(getEntity(), "HUDbundle", part)),
 
   // activity initialization
   myclock(), //TRIGGERING ON CLOCK (for now)
@@ -111,7 +111,7 @@ F16HUD::F16HUD(Entity* e, const char* part, const
 
   // connect the triggers for simulation
   //do_calc.setTrigger(myclock); //CLOCK
-  do_calc.setTrigger(myvehicleStateReadToken); //CLOCK
+  do_calc.setTrigger(myHUDbundleReadToken); //CLOCK
 
 }
 
@@ -193,7 +193,7 @@ bool F16HUD::isPrepared()
   bool res = true;
 
   // Example checking a token:
-  CHECK_TOKEN(myvehicleStateReadToken);
+  CHECK_TOKEN(myHUDbundleReadToken);
 
   // D_MOD("HUD TOKEN GOOD")
 
@@ -243,7 +243,7 @@ void F16HUD::doCalculation(const TimeSpec& ts)
       it happens, forget about the try/catch blocks. */
 
   try {
-    StreamReader<vehicleState> myvehicleStateReader(myvehicleStateReadToken, ts);
+    StreamReader<HUDbundle> HUDbundleReader(myHUDbundleReadToken, ts);
 /*     your_data.ias = myvehicleStateReader.data().u; //full steam ahead
     // myvehicleStateReader.data().u; //
     your_data.alt = -myvehicleStateReader.data().z; //negative z is upwards
@@ -253,14 +253,14 @@ void F16HUD::doCalculation(const TimeSpec& ts)
     your_data.loadfactor = myvehicleStateReader.data().thrust;
  */
     // set data on windowed HUD
-    fillData(window.getHUD(), myvehicleStateReader.data());
+    fillData(window.getHUD(), HUDbundleReader.data());
     
     window.redraw();
 
   #ifdef HAVE_OSG_WORLDVIEW
       // set data on OSG callback HUD
       if(osg_callback) {
-        fillData(osg_callback->getHUD(), myvehicleStateReader.data());
+        fillData(osg_callback->getHUD(), HUDbundleReader.data());
       }
   #endif
       
@@ -282,15 +282,18 @@ void F16HUD::doCalculation(const TimeSpec& ts)
 }
 
 //void F16HUD::fillData(HUD& hud, const YourData& your_data)
-void F16HUD::fillData(HUD& hud, const vehicleState& myVS)
+void F16HUD::fillData(HUD& hud, const HUDbundle& myVS)
 {
     hud.SetSpeedTapeSpeedIAS(myVS.u);
+    hud.SetSpeedTapeLateralSpeed(myVS.v);
     hud.SetAltTapeAltitude(-myVS.z);
     hud.SetPitchLadderPitchAngle(myVS.theta);
     hud.SetPitchLadderRollAngle(myVS.phi);
     hud.SetBankIndicatorRollAngle(myVS.phi);
     hud.SetHeadingTapeHeading(myVS.psi);
     hud.SetAircraftReferenceNz(myVS.thrust);
+
+    hud.SetAircraftReferenceLandingSite(-myVS.x, -myVS.y, myVS.psi);
 }
 
 // Make a TypeCreator object for this module, the TypeCreator

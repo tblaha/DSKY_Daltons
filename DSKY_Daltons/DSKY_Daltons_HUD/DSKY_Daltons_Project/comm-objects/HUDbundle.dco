@@ -1,0 +1,52 @@
+(Type double)
+(Type float)
+(Type int)
+(Type bool)
+(Type string)
+
+(Stream HUDbundle
+    (float max_rate_sp (Default 10.0f))
+    (float vertical_rate_sp (Default 0.0f))
+    (float phi_d (Default 0.0f))
+    (float theta_d (Default 0.0f))
+    (float psi_d (Default 0.0f))
+    (bool sat_pos (Default false))
+    (bool sat_neg (Default false))
+
+    (int Team1Score (Default 0))
+    (int Team2Score (Default 0))
+    (int Team3Score (Default 0))
+
+    (double fuel_reward)
+
+    (string message)
+
+    (float x (Default 0.0f))
+    (float y (Default 0.0f))
+    (float z (Default 0.0f))
+
+    (float u (Default 0.0f))
+    (float v (Default 0.0f))
+    (float w (Default 0.0f))
+
+    (float e0 (Default 1.0f))
+    (float ex (Default 0.0f))
+    (float ey (Default 0.0f))
+    (float ez (Default 0.0f))
+
+    (float phi (Default 0.0f))
+    (float theta (Default 0.0f))
+    (float psi (Default 0.0f))
+
+    (float p (Default 0.0f))
+    (float q (Default 0.0f))
+    (float r (Default 0.0f))
+
+    (float mass (Default 0.0f))
+    (float thrust (Default 0.0f))
+
+    (float lgDelta1 (Default 0.0f))
+    (float lgDelta2 (Default 0.0f))
+    (float lgDelta3 (Default 0.0f))
+    (float lgDelta4 (Default 0.0f))
+)

@@ -32,6 +32,7 @@ class SpeedTape
       inline void SetLineColor(double r, double g, double b){lineColor[0] = (GLfloat)r; lineColor[1] = (GLfloat)g; lineColor[2] = (GLfloat)b;}
 
       inline void SetSpeedIAS(double speed){speed_ms = speed;} // in m/s
+      inline void SetLateralSpeed(double speed){speed_v = speed;} // in m/s
       inline void SetSpeedBug(double speed_bug){speed_bug_ms = speed_bug;} // in m/s
 
       // opengl display
@@ -48,6 +49,9 @@ class SpeedTape
 
       // indicated airspeed in m/s !!
       double speed_ms; 
+
+      // lateral speed in body v coordinate
+      double speed_v; 
    
       // indicated airspeed in m/s !!
       double speed_bug_ms;

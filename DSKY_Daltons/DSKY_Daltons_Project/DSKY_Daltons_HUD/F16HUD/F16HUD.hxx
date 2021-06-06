@@ -28,7 +28,7 @@ USING_DUECA_NS;
 #include "F16HUDOSGCallback.hxx"
 #endif
 
-typedef vehicleState YourData;
+typedef HUDbundle YourData;
 
 /** A simulation module.
     
@@ -40,17 +40,8 @@ typedef vehicleState YourData;
 class F16HUD: public Module
 {
 private: // simulation data
-  // declare the data you need in your simulation
+  // declare the data you need in your simulativehicleStateon
   F16HUDWindow window;
-
-  /* struct YourData{
-	  float ias;
-	  float alt;
-	  float pitch;
-	  float roll;
-	  float heading;
-	  float loadfactor;
-  }your_data; */
 
 #ifdef HAVE_OSG_WORLDVIEW
   F16HUDOSGCallback *osg_callback;
@@ -62,7 +53,7 @@ private: // channel access
   // access tokens for all the channels you read and write
   // example
   // StreamChannelReadToken<MyData>  my_token;
-  StreamChannelReadToken<vehicleState> myvehicleStateReadToken;
+  StreamChannelReadToken<HUDbundle> myHUDbundleReadToken;
 
 private: // activity allocation
   /** You might also need a clock. Don't mis-use this, because it is
@@ -132,7 +123,7 @@ public: // the member functions that are called for activities
 public:
   /** fill a HUD object from channel. */
   //static void fillData(HUD&, const YourData&);
-  static void fillData(HUD&, const vehicleState&);
+  static void fillData(HUD&, const HUDbundle&);
 };
 
 #endif

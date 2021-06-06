@@ -39,6 +39,7 @@ class AircraftReference
       inline void SetSteerpointNo(int stpno){steerpointno = stpno;}
       inline void SetSteerpointDist(double stpdist){steerpointdist = stpdist;} // m
       inline void SetEstimateTimeEnroute(double EstTimeEnr){ETE = EstTimeEnr;} // seconds
+      inline void SetLandingSiteDifference(double xdiff, double ydiff, double yaw){_veh_x = xdiff; _veh_y = ydiff; _veh_yaw = yaw;} // m
 
       // opengl display
       void DrawGL();
@@ -58,6 +59,11 @@ class AircraftReference
       GLfloat lineColor[3];
 
       double theta0;          // rad
+      double _veh_x;
+      double _veh_y;
+      double _veh_yaw;
+      double _x_range;
+      double _y_range;
       double nz;              // g
       double nz_max;          // g
       int    steerpointno;    //

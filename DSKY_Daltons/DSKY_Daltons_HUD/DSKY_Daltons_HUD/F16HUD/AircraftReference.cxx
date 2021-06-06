@@ -18,6 +18,11 @@ AircraftReference::AircraftReference(double height, double vfov):
    y_screenpos   (   0.0),
    lineWidth     (   1.0),
    theta0        (   0.0),     // rad
+   _veh_x        (   0.0),
+   _veh_y        (   0.0),
+   _veh_yaw      (   0.0),
+   _x_range      ( 100.0),
+   _y_range      ( 100.0),
    nz            (   1.0),     // g's
    nz_max        (   1.0),     // g's
    steerpointno  (   1  ),
@@ -62,7 +67,7 @@ void AircraftReference::DrawGL()
 
       // gun cross
       glPushMatrix();
-         glTranslatef(0.0, distToScreen*tan(theta0), 0.0);
+         glTranslatef(0.0, distToScreen * tan(theta0), 0.0);
          glLineWidth(lineWidth);
          glColor3fv(lineColor);
          glBegin(GL_LINES);
@@ -74,6 +79,25 @@ void AircraftReference::DrawGL()
             glVertex2f(   0.0, -22.0);
             glVertex2f(   0.0,  11.0);
             glVertex2f(   0.0,  22.0);
+         glEnd();
+      glPopMatrix();
+
+      // landing site
+      glPushMatrix();
+         glRotatef(Rad2Deg(_veh_yaw), 0, 0, 1);
+         glTranslatef(screenheight*_veh_y/_y_range, screenheight*_veh_x/_x_range, 0.0); //todo: implement limits and proper screenwidth
+         glRotatef(-Rad2Deg(_veh_yaw), 0, 0, 1);
+         glLineWidth(lineWidth);
+         glColor3fv(lineColor);
+         glBegin(GL_LINES);
+            glVertex2f( -22.0,   0.0);
+            glVertex2f(   0.0, -22.0);
+            glVertex2f(   0.0, -22.0);
+            glVertex2f(  22.0,   0.0);
+            glVertex2f(  22.0,   0.0);
+            glVertex2f(   0.0,  22.0);
+            glVertex2f(   0.0,  22.0);
+            glVertex2f( -22.0,   0.0);
          glEnd();
       glPopMatrix();
 

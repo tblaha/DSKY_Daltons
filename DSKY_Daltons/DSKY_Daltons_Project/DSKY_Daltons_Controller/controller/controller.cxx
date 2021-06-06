@@ -91,6 +91,11 @@ const ParameterTable* controller::getMyParameterTable()
       new VarProbe<_ThisModule_,float >
       (&_ThisModule_::Kd),
       "Rate controller derivative gain"},
+
+    { "rref",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::rref),
+      "Max reference to rate controller"},
     
     { "Tp",
       new VarProbe<_ThisModule_,float >
@@ -128,9 +133,7 @@ controller::controller(Entity* e, const char* part, const
   myYawRate(0.0f),
   myThrottle(0.0f),
   // Maximum angular rates are 10deg/2 (taken from http://www.stengel.mycpanel.princeton.edu/LM.pdf)
-  maxp(0.175f),
-  maxq(0.175f),
-  maxr(0.175f),
+  rref(0.175f),
   // Vehicle angular rates
   myp(0.0f),
   myq(0.0f),
@@ -190,8 +193,8 @@ controller::controller(Entity* e, const char* part, const
   mySwitchSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondarySwitches", part)),
   
   myVehicleStateStreamReadToken(getId(), NameSet(getEntity(), "vehicleState", part)),
-  
   myThrusterForcesStreamWriteToken(getId(), NameSet(getEntity(), "thrusterForces", part)),
+  myflightControlModesToken(getId(), NameSet(getEntity(), "flightControlModes", part)),
   
 
   // activity initialization
@@ -269,6 +272,7 @@ bool controller::isPrepared()
   CHECK_TOKEN(mySwitchSecondaryStreamReadToken);
   CHECK_TOKEN(myVehicleStateStreamReadToken);
   CHECK_TOKEN(myThrusterForcesStreamWriteToken);
+  CHECK_TOKEN(myflightControlModesToken);
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
@@ -352,9 +356,9 @@ void controller::doCalculation(const TimeSpec& ts)
       //Reading from the primary control stream
       try {
           StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts);
-          myRollRate = myControlPrimaryReader.data().ux*maxp;
-          myPitchRate = myControlPrimaryReader.data().uy*maxq;
-          myYawRate = myControlPrimaryReader.data().uz*maxr;
+          myRollRate = myControlPrimaryReader.data().ux*rref;
+          myPitchRate = myControlPrimaryReader.data().uy*rref;
+          myYawRate = myControlPrimaryReader.data().uz*rref;
           myThrottle = myControlPrimaryReader.data().uc;
       }
       catch (Exception& e) {
@@ -525,6 +529,15 @@ void controller::doCalculation(const TimeSpec& ts)
   myThrusterForcesWriter.data().Fx = myFx;
   myThrusterForcesWriter.data().Fy = myFy;
   myThrusterForcesWriter.data().Fz = myFz;
+
+  StreamWriter<flightControlModes> FCWriter(myflightControlModesToken, ts);
+  FCWriter.data().max_rate_sp = 10.0f;
+  FCWriter.data().vertical_rate_sp = 0.0f;
+  FCWriter.data().phi_d = 0.0f;
+  FCWriter.data().theta_d = 0.0f;
+  FCWriter.data().psi_d = 0.0f;
+  FCWriter.data().sat_pos = 0.0f;
+  FCWriter.data().sat_neg = 0.0f;
 
   if (snapshotNow()) {
     // keep a copy of the model state. Snapshot sending is done in the

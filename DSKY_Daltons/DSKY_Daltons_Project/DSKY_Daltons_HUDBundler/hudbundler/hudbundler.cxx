@@ -1,12 +1,12 @@
 /* ------------------------------------------------------------------   */
-/*      item            : controller.cxx
+/*      item            : hudbundler.cxx
         made by         : tblaha
         from template   : DusimeModuleTemplate.cxx
         template made by: Rene van Paassen
-        date            : Thu May 13 15:41:29 2021
+        date            : Sun Jun  6 00:25:14 2021
         category        : body file
         description     :
-        changes         : Thu May 13 15:41:29 2021 first version
+        changes         : Sun Jun  6 00:25:14 2021 first version
         template changes: 030401 RvP Added template creation comment
                           060512 RvP Modified token checking code
                           131224 RvP convert snap.data_size to
@@ -16,15 +16,15 @@
 */
 
 
-#define controller_cxx
+#define hudbundler_cxx
+#define GROUP_NUMBER 2
 // include the definition of the module class
-#include "controller.hxx"
+#include "hudbundler.hxx"
 
 // include the debug writing header. Warning and error messages
 // are on by default, debug and info can be selected by
 // uncommenting the respective defines
 //#define D_MOD
-#define W_MOD
 //#define I_MOD
 #include <debug.h>
 
@@ -34,13 +34,11 @@
 #define DO_INSTANTIATE
 #include <dusime.h>
 
-#include <cmath>
-
 // class/module name
-const char* const controller::classname = "controller";
+const char* const hudbundler::classname = "hudbundler";
 
 // initial condition/trim table
-const IncoTable* controller::getMyIncoTable()
+const IncoTable* hudbundler::getMyIncoTable()
 {
   static IncoTable inco_table[] = {
     // enter pairs of IncoVariable and VarProbe pointers (i.e.
@@ -59,7 +57,7 @@ const IncoTable* controller::getMyIncoTable()
 }
 
 // parameters to be inserted
-const ParameterTable* controller::getMyParameterTable()
+const ParameterTable* hudbundler::getMyParameterTable()
 {
   static const ParameterTable parameter_table[] = {
     { "set-timing",
@@ -81,39 +79,13 @@ const ParameterTable* controller::getMyParameterTable()
     /* The table is closed off with NULL pointers for the variable
        name and MemberCall/VarProbe object. The description is used to
        give an overall description of the module. */
-       
-    { "Kp",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Kp),
-      "Rate controller proportional gain"},
-    
-    { "Kd",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Kd),
-      "Rate controller derivative gain"},
-
-    { "rref",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::rref),
-      "Max reference to rate controller"},
-    
-    { "Tp",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Tp),
-      "Thrust controller proportional gain"},
-    
-    { "z_ref_mult",
-      new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::z_ref_mult),
-      "vertical rate reference multiplier"},
-    
     { NULL, NULL, "please give a description of this module"} };
 
   return parameter_table;
 }
 
 // constructor
-controller::controller(Entity* e, const char* part, const
+hudbundler::hudbundler(Entity* e, const char* part, const
                        PrioritySpec& ps) :
   /* The following line initialises the SimulationModule base class.
      You always pass the pointer to the entity, give the classname and the
@@ -127,56 +99,6 @@ controller::controller(Entity* e, const char* part, const
   SimulationModule(e, classname, part, getMyIncoTable(), 0),
 
   // initialize the data you need in your simulation
-  // Input rates
-  myRollRate(0.0f),
-  myPitchRate(0.0f),
-  myYawRate(0.0f),
-  myThrottle(0.0f),
-  // Maximum angular rates are 10deg/2 (taken from http://www.stengel.mycpanel.princeton.edu/LM.pdf)
-  rref(0.175f),
-  // Vehicle angular rates
-  myp(0.0f),
-  myq(0.0f),
-  myr(0.0f),
-  // Error
-  ep(0.0f),
-  eq(0.0f),
-  er(0.0f),
-  // Proportional control
-  Kp(0.0f),
-  Pp(0.0f),
-  Pq(0.0f),
-  Pr(0.0f),
-  // Derivative control
-  Kd(0.0f),
-  Dp(0.0f),
-  Dq(0.0f),
-  Dr(0.0f),
-  // Controller output
-  pout(0.0f),
-  qout(0.0f),
-  rout(0.0f),
-  // Angular accelerations
-  P(0.0f),
-  Q(0.0f),
-  R(0.0f),
-  // Moments of Inertia
-  Ixx(20800.0f),
-  Iyy(17400.0f),
-  Izz(16500.0f),
-  // Output Forces and Moments
-  myMx(0.0f),
-  myMy(0.0f),
-  myMz(0.0f),
-  myFx(0.0f),
-  myFy(0.0f),
-  myFz(0.0f),
-  // Data storage
-  prev_pout(0.0f),
-  prev_qout(0.0f),
-  prev_rout(0.0f),
-
-  maxThrusterMoment(3300.0f),
 
   // initialize the data you need for the trim calculation
 
@@ -186,34 +108,31 @@ controller::controller(Entity* e, const char* part, const
   //           MyData::classname, 0, Channel::Events, Channel::ReadAllData),
   // w_mytoken(getId(), NameSet(getEntity(), MyData::classname, part),
   //           MyData::classname, "label", Channel::Continuous),
-  myControlPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimaryControls", part)),
-  myControlSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondaryControls", part)),
+  vehicleStateToken(getId(), NameSet(getEntity(), "vehicleState", part)),
+  flightControlModesToken(getId(), NameSet(getEntity(), "flightControlModes", part)),
+  LeaderboardStreamToken(getId(), NameSet(getEntity(), "LeaderboardStream", part)),
 
-  mySwitchPrimaryStreamReadToken(getId(), NameSet(getEntity(), "PrimarySwitches", part)),
-  mySwitchSecondaryStreamReadToken(getId(), NameSet(getEntity(), "SecondarySwitches", part)),
-  
-  myVehicleStateStreamReadToken(getId(), NameSet(getEntity(), "vehicleState", part)),
-  myThrusterForcesStreamWriteToken(getId(), NameSet(getEntity(), "thrusterForces", part)),
-  myflightControlModesToken(getId(), NameSet(getEntity(), "flightControlModes", part)),
-  
+  fuelRewardEventReadToken(getId(), NameSet(getEntity(), "fuelRewardEvent", part)),
+  AnnouncementEventToken(getId(), NameSet(getEntity(), "AnnouncementEvent", part)),
+
+  HUDbundleToken(getId(), NameSet(getEntity(), "HUDbundle", part)),
 
   // activity initialization
-  myclock(),
+  // myclock(),
   cb1(this, &_ThisModule_::doCalculation),
-  do_calc(getId(), "takes stick inputs and current rates. Outputs thruster forces and engine thrust command", &cb1, ps)
+  do_calc(getId(), "Take info and bundle for the HUD, since HUD can only take one channel", &cb1, ps)
 {
   // do the actions you need for the simulation
 
   // connect the triggers for simulation
-  do_calc.setTrigger( myControlPrimaryStreamReadToken );
-  //do_calc.setTrigger( myclock );
+  do_calc.setTrigger( vehicleStateToken );
 
   // connect the triggers for trim calculation. Leave this out if you
   // don not need input for trim calculation
-  // trimCalculationCondition(/* fill in your trim triggering channels */);
+  //trimCalculationCondition(/* fill in your trim triggering channels */);
 }
 
-bool controller::complete()
+bool hudbundler::complete()
 {
   /* All your parameters have been set. You may do extended
      initialisation here. Return false if something is wrong. */
@@ -221,13 +140,13 @@ bool controller::complete()
 }
 
 // destructor
-controller::~controller()
+hudbundler::~hudbundler()
 {
   //
 }
 
 // as an example, the setTimeSpec function
-bool controller::setTimeSpec(const TimeSpec& ts)
+bool hudbundler::setTimeSpec(const TimeSpec& ts)
 {
   // a time span of 0 is not acceptable
   if (ts.getValiditySpan() == 0) return false;
@@ -245,7 +164,7 @@ bool controller::setTimeSpec(const TimeSpec& ts)
 }
 
 // and the checkTiming function
-bool controller::checkTiming(const std::vector<int>& i)
+bool hudbundler::checkTiming(const std::vector<int>& i)
 {
   if (i.size() == 3) {
     new TimingCheck(do_calc, i[0], i[1], i[2]);
@@ -260,19 +179,17 @@ bool controller::checkTiming(const std::vector<int>& i)
 }
 
 // tell DUECA you are prepared
-bool controller::isPrepared()
+bool hudbundler::isPrepared()
 {
   bool res = true;
 
   // Example checking a token:
-  // CHECK_TOKEN(w_somedata);
-  CHECK_TOKEN(myControlPrimaryStreamReadToken);
-  CHECK_TOKEN(myControlSecondaryStreamReadToken);
-  CHECK_TOKEN(mySwitchPrimaryStreamReadToken);
-  CHECK_TOKEN(mySwitchSecondaryStreamReadToken);
-  CHECK_TOKEN(myVehicleStateStreamReadToken);
-  CHECK_TOKEN(myThrusterForcesStreamWriteToken);
-  CHECK_TOKEN(myflightControlModesToken);
+  CHECK_TOKEN(vehicleStateToken);
+  CHECK_TOKEN(flightControlModesToken);
+  //CHECK_TOKEN(LeaderboardStreamToken);
+  //CHECK_TOKEN(fuelRewardEventReadToken);
+  //CHECK_TOKEN(AnnouncementEventToken);
+  CHECK_TOKEN(HUDbundleToken);
 
   // Example checking anything
   // CHECK_CONDITION(myfile.good());
@@ -283,13 +200,13 @@ bool controller::isPrepared()
 }
 
 // start the module
-void controller::startModule(const TimeSpec &time)
+void hudbundler::startModule(const TimeSpec &time)
 {
   do_calc.switchOn(time);
 }
 
 // stop the module
-void controller::stopModule(const TimeSpec &time)
+void hudbundler::stopModule(const TimeSpec &time)
 {
   do_calc.switchOff(time);
 }
@@ -297,7 +214,7 @@ void controller::stopModule(const TimeSpec &time)
 // fill a snapshot with state data. You may remove this method (and the
 // declaration) if you specified to the SimulationModule that the size of
 // state snapshots is zero
-void controller::fillSnapshot(const TimeSpec& ts,
+void hudbundler::fillSnapshot(const TimeSpec& ts,
                               Snapshot& snap, bool from_trim)
 {
   // The most efficient way of filling a snapshot is with an AmorphStore
@@ -320,7 +237,7 @@ void controller::fillSnapshot(const TimeSpec& ts,
 // reload from a snapshot. You may remove this method (and the
 // declaration) if you specified to the SimulationModule that the size of
 // state snapshots is zero
-void controller::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
+void hudbundler::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
 {
   // access the data in the snapshot with an AmorphReStore object
   AmorphReStore s(snap.data, snap.getDataSize());
@@ -334,12 +251,13 @@ void controller::loadSnapshot(const TimeSpec& t, const Snapshot& snap)
 // this routine contains the main simulation process of your module. You
 // should read the input channels here, and calculate and write the
 // appropriate output
-void controller::doCalculation(const TimeSpec& ts)
+void hudbundler::doCalculation(const TimeSpec& ts)
 {
+  StreamWriter<HUDbundle> HUDWriter(HUDbundleToken, ts);
+
   // check the state we are supposed to be in
   switch (getAndCheckState(ts)) {
   case SimulationState::HoldCurrent: {
-
     // only repeat the output, do not change the model state
 
     break;
@@ -347,142 +265,6 @@ void controller::doCalculation(const TimeSpec& ts)
 
   case SimulationState::Replay:
   case SimulationState::Advance: {
-
-
-      //
-      //READING FROM THE CHANNELS
-      //
-
-      //Reading from the primary control stream
-      try {
-          StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts);
-          myRollRate = myControlPrimaryReader.data().ux*rref;
-          myPitchRate = myControlPrimaryReader.data().uy*rref;
-          myYawRate = myControlPrimaryReader.data().uz*rref;
-          myThrottle = myControlPrimaryReader.data().uc;
-      }
-      catch (Exception& e) {
-          W_MOD(classname << "PrimaryControls read had an error @ " << ts << e);
-      }
-
-      //Reading from the secondary control stream and updating the zdot reference generator limits
-      try {
-          StreamReader<SecondaryControls> myControlSecondaryReader(myControlSecondaryStreamReadToken, ts);
-          z_ref_setting = myControlSecondaryReader.data().flap_setting;
-          update_max_zdot();
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "Sec Ctrl This channel had an error @ " << ts );
-      }
-
-      //Reading from the primary switch event
-      try {
-          StreamReader<PrimarySwitches>mySwitchPrimaryReader(mySwitchPrimaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error");
-      }
-
-      //Reading from the secondary switch stream
-      try {
-          StreamReader<SecondarySwitches> mySwitchSecondaryReader(mySwitchSecondaryStreamReadToken, ts);
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error");
-      }
-
-      //Reading from the vehicle
-      try {
-          StreamReader<vehicleState> myVehicleStateReader(myVehicleStateStreamReadToken, ts-100);
-          myp = myVehicleStateReader.data().p;
-          myq = myVehicleStateReader.data().q;
-          myr = myVehicleStateReader.data().r;
-          // Compute the angular accelerations
-          P = (myp-myp_prev)/ts.getDtInSeconds();
-          Q = (myq-myq_prev)/ts.getDtInSeconds();
-          R = (myr-myr_prev)/ts.getDtInSeconds();
-          myp_prev = myp;
-          myq_prev = myq;
-          myr_prev = myr;
-
-          myuvw = Eigen::Vector3f(
-            myVehicleStateReader.data().u, 
-            myVehicleStateReader.data().v, 
-            myVehicleStateReader.data().w);
-          myquat = Eigen::Quaternionf(
-            myVehicleStateReader.data().e0,
-            myVehicleStateReader.data().ex,
-            myVehicleStateReader.data().ey,
-            myVehicleStateReader.data().ez);
-          mass = myVehicleStateReader.data().mass;
-      }
-      catch (Exception& e) {
-          W_MOD(classname<< "This channel had an error @ " << ts );
-      }
-
-      //
-      //WRITING TO THE CHANNELS
-      //
-      
-      // Feedback loop
-      ep = myRollRate - myp;
-      eq = myPitchRate - myq;
-      er = myYawRate - myr;
-      
-      // Proportional part
-      Pp = Kp*ep;
-      Pq = Kp*eq;
-      Pr = Kp*er;
-      
-      // Derivative part
-      Dp = Kd*P;
-      Dq = Kd*Q;
-      Dr = Kd*R;
-      
-      // Controller output
-      myMx = clamp(Ixx * (Pp+Dp), -maxThrusterMoment, maxThrusterMoment);
-      myMy = clamp(Iyy * (Pq+Dq), -maxThrusterMoment, maxThrusterMoment);
-      myMz = clamp(Izz * (Pr+Dr), -maxThrusterMoment, maxThrusterMoment);
-      
-      // Moments
-      //myMx = Ixx*P;
-      //myMy = Iyy*Q;
-      //myMz = Izz*R;
-      
-      // Forces
-      myFx = 0.0f;
-      myFy = 0.0f;
-      myFz = -myThrottle*1;
-
-      // Store variables
-      prev_pout = pout;
-      prev_qout = qout;
-      prev_rout = rout;
-
-      /**
-       * @brief Thrust controller
-       * 
-       */
-      myInertialVel = myquat * myuvw; /**< note: not normal multiplication! Hamiltonion products according to v' = qvq-1 */
-      nI = myquat * nB;
-      mu = (std::abs(nI[2]) < 0.1) ? std::copysign(0.1f, nI[2]) : nI[2];
-
-      float T_raw = mass / mu * ( Tp * (-gen_z_dot_ref(myThrottle) + myInertialVel[2]) + gM);
-
-      myFz = -clamp( T_raw, T_max*t_limits[0], T_max*t_limits[1] );
-
-      D_MOD("Current zdotref " << -gen_z_dot_ref(myThrottle));
-      //D_MOD("Current zdot " << myInertialVel[2]);
-      D_MOD("Current mu " << mu);
-      //D_MOD("Current T_raw " << T_raw);
-      D_MOD("Current myFz" << myFz);
-
-      D_MOD("Current myMx" << myMx);
-      D_MOD("Current myMy" << myMy);
-      D_MOD("Current myMz" << myMz);
-      //D_MOD("Current uc" << myThrottle);
-      //D_MOD("Current max_zdot" << max_zdot);
-
     // access the input
     // example:
     // try {
@@ -500,6 +282,48 @@ void controller::doCalculation(const TimeSpec& ts)
        it happens, forget about the try/catch blocks. */
 
     // do the simulation calculations, one step
+    // controller state
+    D_MOD("test1");
+    StreamReaderLatest<flightControlModes> FCReader(flightControlModesToken);
+    HUDWriter.data().max_rate_sp        = FCReader.data().max_rate_sp;
+    HUDWriter.data().vertical_rate_sp   = FCReader.data().vertical_rate_sp;
+    HUDWriter.data().phi_d              = FCReader.data().phi_d;
+    HUDWriter.data().theta_d            = FCReader.data().theta_d;
+    HUDWriter.data().psi_d              = FCReader.data().psi_d;
+    HUDWriter.data().sat_pos            = FCReader.data().sat_pos;
+    HUDWriter.data().sat_neg            = FCReader.data().sat_neg;
+
+    // vehicleState
+    D_MOD("test2");
+    StreamReaderLatest<vehicleState> StateReader(vehicleStateToken);
+    HUDWriter.data().x        = StateReader.data().x;
+    HUDWriter.data().y        = StateReader.data().y;
+    HUDWriter.data().z        = StateReader.data().z;
+    HUDWriter.data().u        = StateReader.data().u;
+    HUDWriter.data().v        = StateReader.data().v;
+    HUDWriter.data().w        = StateReader.data().w;
+    HUDWriter.data().e0       = StateReader.data().e0;
+    HUDWriter.data().ex       = StateReader.data().ex;
+    HUDWriter.data().ey       = StateReader.data().ey;
+    HUDWriter.data().ez       = StateReader.data().ez;
+    HUDWriter.data().phi      = StateReader.data().phi;
+    HUDWriter.data().theta    = StateReader.data().theta;
+    HUDWriter.data().psi      = StateReader.data().psi;
+    HUDWriter.data().p        = StateReader.data().p;
+    HUDWriter.data().q        = StateReader.data().q;
+    HUDWriter.data().r        = StateReader.data().r;
+    HUDWriter.data().mass     = StateReader.data().mass;
+    HUDWriter.data().thrust   = StateReader.data().thrust;
+    HUDWriter.data().lgDelta1 = StateReader.data().lgDelta1;
+    HUDWriter.data().lgDelta2 = StateReader.data().lgDelta2;
+    HUDWriter.data().lgDelta3 = StateReader.data().lgDelta3;
+    HUDWriter.data().lgDelta4 = StateReader.data().lgDelta4;
+
+    // Leaderboard
+    //StreamReaderLatest<LeaderboardStream> LeaderboardReader(LeaderboardStreamToken);
+    //HUDWriter.data().Team1Score        = LeaderboardReader.data().Team1Score;
+    //HUDWriter.data().Team2Score        = LeaderboardReader.data().Team2Score;
+    //HUDWriter.data().Team3Score        = LeaderboardReader.data().Team3Score;
 
     break;
     }
@@ -510,6 +334,8 @@ void controller::doCalculation(const TimeSpec& ts)
     throw CannotHandleState(getId(),GlobalId(), "state unhandled");
   }
 
+
+
   // DUECA applications are data-driven. From the time a module is switched
   // on, it should produce data, so that modules "downstreams" are
   // activated
@@ -517,27 +343,42 @@ void controller::doCalculation(const TimeSpec& ts)
   // example
   // DataWriter<MyOutput> y(output_token, ts);
 
+
+  // fuel reward
+  D_MOD("test5");
+  if(fuelRewardEventReadToken.getNumWaitingEvents(ts)) {
+    try {
+      EventReader<FuelRewardEvent> fuelRewardEventReader(fuelRewardEventReadToken, ts);
+      if(fuelRewardEventReader.data().GroupNumber == GROUP_NUMBER) {
+        _fuel_reward = fuelRewardEventReader.data().fuel_reward;
+      }
+    }
+    catch (Exception& e) {
+      W_MOD(classname << ": Error while reading Fuel Reward Event!");
+    }
+  }
+  D_MOD("test6");
+  HUDWriter.data().fuel_reward = _fuel_reward;
+
+  D_MOD("test7");
+
+  // Announcement
+  if(AnnouncementEventToken.getNumWaitingEvents(ts)) {
+    try {
+      EventReader<AnnouncementEvent> AnnouncementReader(AnnouncementEventToken, ts);
+      _message = AnnouncementReader.data().message;
+    }
+    catch (Exception& e) {
+      W_MOD(classname << ": Error while reading Announcement Events!");
+    }
+  }
+  D_MOD("test8");
+  HUDWriter.data().message = _message;
+  D_MOD("test9");
+
+
   // write the output into the output channel, using the stream writer
-  // y.data().var1 = something; ...
-  StreamWriter<thrusterForces> myThrusterForcesWriter(myThrusterForcesStreamWriteToken,ts);
-  //Writing the moments to the thrusterForces channel
-  myThrusterForcesWriter.data().Mx = myMx;
-  myThrusterForcesWriter.data().My = myMy;
-  myThrusterForcesWriter.data().Mz = myMz;
-
-  //Writing the forces to the thrusterForces channel
-  myThrusterForcesWriter.data().Fx = myFx;
-  myThrusterForcesWriter.data().Fy = myFy;
-  myThrusterForcesWriter.data().Fz = myFz;
-
-  StreamWriter<flightControlModes> FCWriter(myflightControlModesToken, ts);
-  FCWriter.data().max_rate_sp = 10.0f;
-  FCWriter.data().vertical_rate_sp = 0.0f;
-  FCWriter.data().phi_d = 0.0f;
-  FCWriter.data().theta_d = 0.0f;
-  FCWriter.data().psi_d = 0.0f;
-  FCWriter.data().sat_pos = 0.0f;
-  FCWriter.data().sat_neg = 0.0f;
+  // y.data().var1 = something; ... w
 
   if (snapshotNow()) {
     // keep a copy of the model state. Snapshot sending is done in the
@@ -548,7 +389,7 @@ void controller::doCalculation(const TimeSpec& ts)
   }
 }
 
-void controller::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
+void hudbundler::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 {
   // read the event equivalent of the input data
   // example
@@ -602,5 +443,5 @@ void controller::trimCalculation(const TimeSpec& ts, const TrimMode& mode)
 // Make a TypeCreator object for this module, the TypeCreator
 // will check in with the scheme-interpreting code, and enable the
 // creation of modules of this type
-static TypeCreator<controller> a(controller::getMyParameterTable());
+static TypeCreator<hudbundler> a(hudbundler::getMyParameterTable());
 

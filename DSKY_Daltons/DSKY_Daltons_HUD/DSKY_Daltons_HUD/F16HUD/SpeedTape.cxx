@@ -12,6 +12,7 @@ SpeedTape::SpeedTape():
    y_screenpos    (0.0),
    lineWidth      (1.0),
    speed_ms       (0.0),
+   speed_v        (0.0),
    speed_bug_ms   (0.0)
 {
    lineColor[0] = 0.0;
@@ -193,7 +194,7 @@ void SpeedTape::DrawGL()
 
          // show speed
          glColor3fv(lineColor);
-         snprintf(temp,10, "%02.0f",speed_kts);
+         snprintf(temp,10, "%02.1f",speed_kts);
          strokeString(-65.0, -9.0, temp, GLUT_STROKE_ROMAN, 0.15);
    
          // show 'C' calibrated airspeed
@@ -204,7 +205,7 @@ void SpeedTape::DrawGL()
          // show mach
          // for now, assume at sea-level
          glColor3fv(lineColor);
-         snprintf(temp,10,"%3.2f", speed_ms/334.0);
+         snprintf(temp,10,"%3.1f", speed_v);
          strokeString(20.0, -195.0, temp, GLUT_STROKE_ROMAN, 0.15);
 
 
