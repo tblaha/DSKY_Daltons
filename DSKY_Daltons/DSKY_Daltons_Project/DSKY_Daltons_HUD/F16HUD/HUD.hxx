@@ -15,6 +15,8 @@
 #define HUD_HXX
 
 #include <GL/gl.h>
+#include <vector>
+#include <string>
 
 // HUD tapes, indicators etc...
 #include "SpeedTape.hxx"
@@ -61,6 +63,9 @@ class HUD: public gl2DObject
       inline void ShowAltTape(bool alt) {show_alttape=alt;}
       inline void SetAltTapePosition(double x, double y) {theAltTape->SetScreenPosition(x, y);}
       inline void SetAltTapeAltitude(double alt) {theAltTape->SetAltitude(alt);}  // m
+      inline void SetAltTapeFloor(double height) {theAltTape->SetFloor(height);}  // m
+      inline void SetAltTapeTermAlt(double alt) {theAltTape->SetTermAlt(alt);}  // m
+      inline void SetAltTapeRates(double rate, double max_rate) {theAltTape->SetRates(rate, max_rate);}  // m
 
       // pitch ladder utility
       inline void ShowPitchLadder(bool pladder) {show_pitchladder=pladder;}
@@ -87,8 +92,15 @@ class HUD: public gl2DObject
       // inline void SetAircraftReferenceVertFOV(double vertFOV) {theAircraftReference->SetVertFOV(vertFOV);}  // deg
       // inline void SetAircraftReferenceScreenHeight(double height) {theAircraftReference->SetScreenHeight(height);}  // drawing units
       inline void SetAircraftReferenceGunCrossPitchAngle(double theta0) {theAircraftReference->SetGunCrossPitchAngle(theta0);} // rad
-      inline void SetAircraftReferenceLandingSite(double xdiff, double ydiff, double yaw) {theAircraftReference->SetLandingSiteDifference(xdiff, ydiff, yaw);} // rad
-      inline void SetAircraftReferenceNz(double nz) {theAircraftReference->SetNz(nz);} // g's
+      inline void SetAircraftReferenceYaw(double yaw) {theAircraftReference->SetYaw(yaw);} // rad
+      inline void SetAircraftReferenceSpeedVector(Eigen::Vector2f PI_proj) {theAircraftReference->SetRelativeSpeedVector(PI_proj);} // rad
+      inline void SetAircraftReferenceLandingSites(std::vector<Eigen::Vector3f> sitesdiff) {theAircraftReference->SetRelativeLandingSites(sitesdiff);} // rad
+      inline void SetAircraftReferenceOtherGroups(std::vector<Eigen::Vector3f> groupsdiff) {theAircraftReference->SetRelativeOtherGroups(groupsdiff);} // rad
+      inline void SetAircraftReferenceRangeScale(double range_scaler){theAircraftReference->SetRangeScale(range_scaler);}
+      inline void SetAircraftReferenceMessage(std::string message){theAircraftReference->SetMessage(message);}
+      inline void SetAircraftReferenceLeaderboard(int g1, int g2, int g3){theAircraftReference->SetLeaderboard(g1, g2, g3);}
+      inline void SetAircraftReferenceNz(double nz, bool sat) {theAircraftReference->SetNz(nz, sat);} // g's
+      inline void SetAircraftReferenceFuel(double fuel) {theAircraftReference->SetFuel(fuel);} // g's
       inline void SetAircraftReferenceNzMax(double nz_max) {theAircraftReference->SetNzMax(nz_max);} // g's //[HJD 24/04/2006]
       inline void ResetAircraftReferenceNz(void) {theAircraftReference->ResetNz();}
       inline void SetAircraftReferenceSteerpointNo(int no) {theAircraftReference->SetSteerpointNo(no);}

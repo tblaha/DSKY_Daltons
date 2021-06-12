@@ -19,4 +19,7 @@ fi
 
 cd models
    ln -sf ../../../../../SimCourse2021/3DModels/* .
+   ln -sf ../../../../../DelftLander/Group1Model/Group1.ac .
+   ln -sf ../../../../../DSKY_Daltons_Model/Model/DSKY_Daltons_Model.ac .
+   ln -sf ../../../../../LAST/3DModel/LAST3DModel.ac .
 cd ..

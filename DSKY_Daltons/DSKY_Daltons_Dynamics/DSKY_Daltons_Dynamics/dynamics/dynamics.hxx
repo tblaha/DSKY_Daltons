@@ -28,6 +28,8 @@ USING_DUECA_NS;
 #include <Eigen/Dense>
 
 using Eigen::Vector3d;
+using Eigen::VectorXd;
+using Eigen::Map;
 using Eigen::Quaterniond;
 
 struct ThrusterForcesData {
@@ -44,7 +46,10 @@ struct VehicleStateData {
   float psi;
   Vector3d pqr;
   float thrust;
-  float mass;
+  float dryMass;
+  float fuelMass;
+  float groundHeight;
+  bool landed;
   //float lgDelta[4]; need to think about the best way to do this, arrays suck
 };
 
@@ -87,10 +92,11 @@ class dynamics: public SimulationModule
     StreamChannelWriteToken<ObjectMotion> ObjectMotionWriteToken;
 
     // Referee channels
-    StreamChannelWriteToken<VehicleStateStream> refVehicleStateWriteToken;
+    ChannelWriteToken refVehicleStateWriteToken;
     EventChannelReadToken<InitialConditionsEvent> initialConditionsEventReadToken;
     EventChannelReadToken<RespawnEvent> respawnEventReadToken;
     EventChannelReadToken<FuelRewardEvent> fuelRewardEventReadToken;
+    StreamChannelReadToken<TerrainHeightStream> terrainHeightStreamReadToken;
 
   private: // activity allocation
     /** You might also need a clock. Don't mis-use this, because it is
@@ -175,6 +181,7 @@ class dynamics: public SimulationModule
     void readRespawnEvent(const TimeSpec& ts);
     void readFuelRewardEvent(const TimeSpec& ts);
     void readThrusterForcesStream(const TimeSpec& ts);
+    void readTerrainHeightStream(const TimeSpec& ts);
     void writeVehicleStateStream(const TimeSpec& ts);
     void writeRefVehicleStateStream(const TimeSpec& ts);
     void writeObjectMotionStream(const TimeSpec& ts);

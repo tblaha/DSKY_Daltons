@@ -82,15 +82,31 @@ const ParameterTable* controller::getMyParameterTable()
        name and MemberCall/VarProbe object. The description is used to
        give an overall description of the module. */
        
-    { "Kp",
+    { "Prop_roll",
       new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Kp),
-      "Rate controller proportional gain"},
+      (&_ThisModule_::Kp_p),
+      "Roll rate controller proportional gain"},
+    { "Prop_pitch",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Kp_q),
+      "Pitch rate controller proportional gain"},
+    { "Prop_yaw",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Kp_r),
+      "Yaw rate controller proportional gain"},
     
-    { "Kd",
+    { "Der_roll",
       new VarProbe<_ThisModule_,float >
-      (&_ThisModule_::Kd),
-      "Rate controller derivative gain"},
+      (&_ThisModule_::Kd_p),
+      "Roll rate controller derivative gain"},
+    { "Der_pitch",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Kd_q),
+      "Pitch rate controller derivative gain"},
+    { "Der_yaw",
+      new VarProbe<_ThisModule_,float >
+      (&_ThisModule_::Kd_r),
+      "Yaw rate controller derivative gain"},
 
     { "rref",
       new VarProbe<_ThisModule_,float >
@@ -128,42 +144,14 @@ controller::controller(Entity* e, const char* part, const
 
   // initialize the data you need in your simulation
   // Input rates
-  myRollRate(0.0f),
-  myPitchRate(0.0f),
-  myYawRate(0.0f),
   myThrottle(0.0f),
   // Maximum angular rates are 10deg/2 (taken from http://www.stengel.mycpanel.princeton.edu/LM.pdf)
   rref(0.175f),
-  // Vehicle angular rates
-  myp(0.0f),
-  myq(0.0f),
-  myr(0.0f),
-  // Error
-  ep(0.0f),
-  eq(0.0f),
-  er(0.0f),
-  // Proportional control
-  Kp(0.0f),
-  Pp(0.0f),
-  Pq(0.0f),
-  Pr(0.0f),
-  // Derivative control
-  Kd(0.0f),
-  Dp(0.0f),
-  Dq(0.0f),
-  Dr(0.0f),
-  // Controller output
-  pout(0.0f),
-  qout(0.0f),
-  rout(0.0f),
-  // Angular accelerations
-  P(0.0f),
-  Q(0.0f),
-  R(0.0f),
-  // Moments of Inertia
-  Ixx(20800.0f),
-  Iyy(17400.0f),
-  Izz(16500.0f),
+  // Maximum/minium thurster moments
+  maxThrusterMoment(3300.0f),
+  // Gains
+  //Prop_gain(Kp_p, Kp_q, Kp_r),
+  //Der_gain(Kd_p, Kd_q, Kd_r),
   // Output Forces and Moments
   myMx(0.0f),
   myMy(0.0f),
@@ -171,12 +159,6 @@ controller::controller(Entity* e, const char* part, const
   myFx(0.0f),
   myFy(0.0f),
   myFz(0.0f),
-  // Data storage
-  prev_pout(0.0f),
-  prev_qout(0.0f),
-  prev_rout(0.0f),
-
-  maxThrusterMoment(3300.0f),
 
   // initialize the data you need for the trim calculation
 
@@ -352,13 +334,16 @@ void controller::doCalculation(const TimeSpec& ts)
       //
       //READING FROM THE CHANNELS
       //
+      //W_MOD("Advance Controller")
 
       //Reading from the primary control stream
       try {
           StreamReader<PrimaryControls> myControlPrimaryReader(myControlPrimaryStreamReadToken, ts);
-          myRollRate = myControlPrimaryReader.data().ux*rref;
-          myPitchRate = myControlPrimaryReader.data().uy*rref;
-          myYawRate = myControlPrimaryReader.data().uz*rref;
+          myRates = Eigen::Array3f(
+            myControlPrimaryReader.data().ux*rref,
+            myControlPrimaryReader.data().uy*rref,
+            myControlPrimaryReader.data().uz*rref);
+
           myThrottle = myControlPrimaryReader.data().uc;
       }
       catch (Exception& e) {
@@ -369,6 +354,7 @@ void controller::doCalculation(const TimeSpec& ts)
       try {
           StreamReader<SecondaryControls> myControlSecondaryReader(myControlSecondaryStreamReadToken, ts);
           z_ref_setting = myControlSecondaryReader.data().flap_setting;
+          map_range_setting = myControlSecondaryReader.data().speedbrake;
           update_max_zdot();
       }
       catch (Exception& e) {
@@ -394,70 +380,67 @@ void controller::doCalculation(const TimeSpec& ts)
       //Reading from the vehicle
       try {
           StreamReader<vehicleState> myVehicleStateReader(myVehicleStateStreamReadToken, ts-100);
-          myp = myVehicleStateReader.data().p;
-          myq = myVehicleStateReader.data().q;
-          myr = myVehicleStateReader.data().r;
-          // Compute the angular accelerations
-          P = (myp-myp_prev)/ts.getDtInSeconds();
-          Q = (myq-myq_prev)/ts.getDtInSeconds();
-          R = (myr-myr_prev)/ts.getDtInSeconds();
-          myp_prev = myp;
-          myq_prev = myq;
-          myr_prev = myr;
+          mypqr = Eigen::Array3f(
+            myVehicleStateReader.data().p,
+            myVehicleStateReader.data().q,
+            myVehicleStateReader.data().r);
 
           myuvw = Eigen::Vector3f(
             myVehicleStateReader.data().u, 
             myVehicleStateReader.data().v, 
             myVehicleStateReader.data().w);
+          
           myquat = Eigen::Quaternionf(
             myVehicleStateReader.data().e0,
             myVehicleStateReader.data().ex,
             myVehicleStateReader.data().ey,
             myVehicleStateReader.data().ez);
-          mass = myVehicleStateReader.data().mass;
+
+          current_z = myVehicleStateReader.data().z;
+          
+          mass = std::max(myVehicleStateReader.data().mass, 1.0f);
       }
       catch (Exception& e) {
           W_MOD(classname<< "This channel had an error @ " << ts );
       }
+      //D_MOD("Gains");
+      Prop_gain = Eigen::Array3f(
+        Kp_p,
+        Kp_q,
+        Kp_r
+      );
+
+      Der_gain = Eigen::Array3f(
+        Kd_p,
+        Kd_q,
+        Kd_r
+      );
 
       //
       //WRITING TO THE CHANNELS
       //
-      
+      //W_MOD("Feedback loop");
       // Feedback loop
-      ep = myRollRate - myp;
-      eq = myPitchRate - myq;
-      er = myYawRate - myr;
-      
+      epqr = myRates - mypqr;
+      //W_MOD("Proportional");
       // Proportional part
-      Pp = Kp*ep;
-      Pq = Kp*eq;
-      Pr = Kp*er;
-      
+      Prop_pqr = Prop_gain*epqr;
+      //W_MOD("Derivative");
       // Derivative part
-      Dp = Kd*P;
-      Dq = Kd*Q;
-      Dr = Kd*R;
-      
+      Der_pqr = Der_gain*((epqr - epqr_prev)/ts.getDtInSeconds());
+      //W_MOD("Controller output");
       // Controller output
-      myMx = clamp(Ixx * (Pp+Dp), -maxThrusterMoment, maxThrusterMoment);
-      myMy = clamp(Iyy * (Pq+Dq), -maxThrusterMoment, maxThrusterMoment);
-      myMz = clamp(Izz * (Pr+Dr), -maxThrusterMoment, maxThrusterMoment);
-      
-      // Moments
-      //myMx = Ixx*P;
-      //myMy = Iyy*Q;
-      //myMz = Izz*R;
-      
+      myMx = clamp(Prop_pqr(0)+Der_pqr(0), -maxThrusterMoment, maxThrusterMoment);
+      myMy = clamp(Prop_pqr(1)+Der_pqr(1), -maxThrusterMoment, maxThrusterMoment);
+      myMz = clamp(Prop_pqr(2)+Der_pqr(2), -maxThrusterMoment, maxThrusterMoment);
+      //W_MOD("Store variables");
+      // Store variables
+      epqr_prev = epqr;
+      //W_MOD("Forces");
       // Forces
       myFx = 0.0f;
       myFy = 0.0f;
       myFz = -myThrottle*1;
-
-      // Store variables
-      prev_pout = pout;
-      prev_qout = qout;
-      prev_rout = rout;
 
       /**
        * @brief Thrust controller
@@ -465,11 +448,45 @@ void controller::doCalculation(const TimeSpec& ts)
        */
       myInertialVel = myquat * myuvw; /**< note: not normal multiplication! Hamiltonion products according to v' = qvq-1 */
       nI = myquat * nB;
-      mu = (std::abs(nI[2]) < 0.1) ? std::copysign(0.1f, nI[2]) : nI[2];
+      mu = (std::abs(nI[2]) < 0.01) ? std::copysign(0.01f, nI[2]) : nI[2];
 
-      float T_raw = mass / mu * ( Tp * (-gen_z_dot_ref(myThrottle) + myInertialVel[2]) + gM);
-
+      vertical_rate_sp = gen_z_dot_ref(myThrottle);
+      float T_raw = mass / mu * ( Tp * (-vertical_rate_sp + myInertialVel[2]) + gM);
       myFz = -clamp( T_raw, T_max*t_limits[0], T_max*t_limits[1] );
+
+      // satch detection
+      if (T_raw < T_max*t_limits[0]) {
+        sat_neg = true;
+        sat_pos = false;
+      } else if (T_raw > T_max*t_limits[1]) {
+        sat_neg = false;
+        sat_pos = true;
+      } else {
+        sat_neg = false;
+        sat_pos = false;
+      }
+
+      /**
+       * @brief calc terminal altitude
+       * 
+       */
+      // stick-off thrust and vertical accel
+      float chosen_thrust = myInertialVel[2] > 0 ? T_max * t_limits[1] : T_max * t_limits[0];
+      float vert_accel = (- mu/mass * chosen_thrust + gM);
+      
+      // safeguard against singularities
+      vert_accel = abs(vert_accel) > 0.0001f ? vert_accel : std::copysign(0.0001f, vert_accel);
+
+      // calc time and altitude
+      float DT = myInertialVel[2] / vert_accel;
+      terminal_z = current_z - 0.5f*vert_accel*DT*DT;
+
+
+
+
+
+
+      // debugging
 
       D_MOD("Current zdotref " << -gen_z_dot_ref(myThrottle));
       //D_MOD("Current zdot " << myInertialVel[2]);
@@ -531,13 +548,15 @@ void controller::doCalculation(const TimeSpec& ts)
   myThrusterForcesWriter.data().Fz = myFz;
 
   StreamWriter<flightControlModes> FCWriter(myflightControlModesToken, ts);
-  FCWriter.data().max_rate_sp = 10.0f;
-  FCWriter.data().vertical_rate_sp = 0.0f;
+  FCWriter.data().max_rate_sp = max_zdot;
+  FCWriter.data().vertical_rate_sp = vertical_rate_sp;
+  FCWriter.data().terminal_z = terminal_z;
+  FCWriter.data().hud_range = map_range_setting;
   FCWriter.data().phi_d = 0.0f;
   FCWriter.data().theta_d = 0.0f;
   FCWriter.data().psi_d = 0.0f;
-  FCWriter.data().sat_pos = 0.0f;
-  FCWriter.data().sat_neg = 0.0f;
+  FCWriter.data().sat_pos = sat_pos;
+  FCWriter.data().sat_neg = sat_neg;
 
   if (snapshotNow()) {
     // keep a copy of the model state. Snapshot sending is done in the

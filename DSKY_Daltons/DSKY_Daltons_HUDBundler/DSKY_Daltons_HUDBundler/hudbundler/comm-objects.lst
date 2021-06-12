@@ -1,0 +1,13 @@
+# this file contains a list of all communicated objects needed by this
+# specific module
+# specify these with the .dco extension, examples:
+# DSKY_Daltons_HUDBundler/comm-objects/MyDataObject.dco
+# Generic/comm-objects/PrimaryControls.dco
+
+DSKY_Daltons_Project/comm-objects/vehicleState.dco
+DSKY_Daltons_Project/comm-objects/flightControlModes.dco
+DSKY_Daltons_Project/comm-objects/HUDbundle.dco
+
+SimCourse2021/comm-objects/FuelRewardEvent.dco
+SimCourse2021/comm-objects/AnnouncementEvent.dco
+SimCourse2021/comm-objects/LeaderboardStream.dco

@@ -14,7 +14,7 @@ HUD::HUD(double width, double height, double vfov):
    show_speedtape        (true),
    show_pitchladder      (true),
    show_alttape          (true),
-   show_bankindicator    (true),
+   show_bankindicator    (false),
    show_headingtape      (true),
    show_aircraftreference(true),
    show_outsidevisual    (true),
@@ -23,7 +23,7 @@ HUD::HUD(double width, double height, double vfov):
    theAltTape            (new AltTape()),
    theBankIndicator      (new BankIndicator()),
    theHeadingTape        (new HeadingTape()),
-   theAircraftReference  (new AircraftReference(screenheight, vert_fov))
+   theAircraftReference  (new AircraftReference(screenheight, vert_fov, screenwidth))
 {
    lineColor[0] = 0.0;
    lineColor[1] = 1.0;

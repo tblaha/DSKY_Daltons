@@ -1,0 +1,11 @@
+(Type float)
+
+(Stream thrusterForces
+    (float Fx (Default 0.0f))
+    (float Fy (Default 0.0f))
+    (float Fz (Default 0.0f))
+
+    (float Mx (Default 0.0f))
+    (float My (Default 0.0f))
+    (float Mz (Default 0.0f))
+)

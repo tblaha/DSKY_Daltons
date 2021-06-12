@@ -72,10 +72,18 @@ mymods = []
 
 use_gui_stick = True;
 use_WorldView = True;
+use_RefereeTestGUI = True;
 
 gamma = 0.25;  # curve parameter for exponential input curve. see https://www.desmos.com/calculator/ekbtvpdhfy
+gamma_vertical = 0.6;  # curve parameter for exponential input curve for collective
 
 if this_node_id == ecs_node:
+    if use_RefereeTestGUI:
+        mymods.append(dueca.Module(
+            "test-gui", "", admin_priority).param(
+                set_timing = sim_timing,
+                check_timing = (20000, 35000)))
+
     if use_gui_stick:
         mymods.append(dueca.Module(
             "gui-stick", "", admin_priority).param(
@@ -132,7 +140,7 @@ if this_node_id == ecs_node:
             # offset by 0.5 (such that stick down in 0 collective) and invert (for some reason that is needed)
             # NOTE: the calibration polynomial means we have fine control over 0.3-0.7 and only very rudimentary
             #       control over the 0-0.3 and 0.7-1 range! May need to reduce gamma for this!
-            calibration_polynomial = (0.5, -0.5*gamma, 0.0, 0.0, 0.0, -0.5+0.5*gamma),
+            calibration_polynomial = (0.5, -0.5*gamma_vertical, 0.0, 0.0, 0.0, -0.5+0.5*gamma_vertical),
         ),
         ).param( # repeated arguments
         add_link = dueca.MultiStickValue().param(
@@ -144,14 +152,13 @@ if this_node_id == ecs_node:
         ),
         ).param( # repeated arguments
         add_link = dueca.MultiStickValue().param(
-            name = "AP_disconnect",
-            # identifying name for the stick value reader
-            create_counter = (1,0),
+            name = "speedbrake",
+            create_counter = (5,0),
             set_counter_up = dueca.MultiStickValue().param(
-                read_button = 6),
-            set_counter_down = dueca.MultiStickValue().param(
                 read_button = 4),
-            calibration_steps = (0,0, 1,1),
+            set_counter_down = dueca.MultiStickValue().param(
+                read_button = 6),
+            calibration_steps = (0,0, 1,0.2, 2,0.4, 3,0.6, 4,0.8, 5,1),
         ),
         ).param( # repeated arguments
         add_link = dueca.MultiStickValue().param(
@@ -233,31 +240,91 @@ if this_node_id == ecs_node:
 		add_object_class_coordinates= (0.0, 0.0, 1000.0),
 		static_object= ("static:spacedome", "spacedome")).param(
 
-                # 3) sun
-                add_object_class_data = ("static:sunlight", "sunlight",
-                "static-light"),
-                add_object_class_coordinates = (0.08, 0.08, 0.08, 1,
-                 0.08, 0.08, 0.08, 1, 0.0, 0.0, 0.0, 1, 0.4, 0.0, 1.0, 0, 0, 0, 0, 0.2, 0, 0),
-                static_object = ("static:sunlight","sunlight")
+        # 3) sun
+        add_object_class_data = ("static:sunlight", "sunlight",
+        "static-light"),
+        add_object_class_coordinates = (0.08, 0.08, 0.08, 1,
+            0.08, 0.08, 0.08, 1, 0.0, 0.0, 0.0, 1, 0.4, 0.0, 1.0, 0, 0, 0, 0, 0.2, 0, 0),
+        static_object = ("static:sunlight","sunlight")
 
-                # 4) HUD
-                ).param(
-                    add_object_class_data = ("HUDbundle", "hud", "f16hud", "main viewport"),
-                    set_frustum           = (0.5, 10000, 30),
-                    set_bg_color          = (0, 0, 1),
-                    set_fog               = (2, 0.0, 0.0, 0.0, 0.5, 1.0, 10000.0, 100000.0),
-                    use_compositeviewer   = False,
-                    allow_unknown         = True,
-                )
+        # 4) HUD
+        ).param(
+            add_object_class_data = ("HUDbundle", "hud", "f16hud", "main viewport"),
+            set_frustum           = (0.5, 10000, 30),
+            set_bg_color          = (0, 0, 1),
+            set_fog               = (2, 0.0, 0.0, 0.0, 0.5, 1.0, 10000.0, 100000.0),
+            use_compositeviewer   = False,
+            allow_unknown         = True,
+            
+        ### 5) Moving objects from ObjectMotion://World
+        ).param(
+        add_object_class_data = 
+            ("ObjectMotion:DelftLander","team1", "moving", "Group1.ac"),
+        
+        # ).param(
+        # add_object_class_data = 
+        #     ("ObjectMotion:DSKY_Daltons","team2", "moving", "DSKY_Daltons_Model.ac"),
+        
+        ).param(add_object_class_data=
+            ("ObjectMotion:LAST","team3", "moving", "LAST3DModel.ac")
+        
+        # fuel rewards 1-6
+        ).param(
+        add_object_class_data 		= ("ObjectMotion:Fuel1", "Fuel1", "moving", "fuel.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Fuel2", "Fuel2", "moving", "fuel.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Fuel3", "Fuel3", "moving", "fuel.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Fuel4", "Fuel4", "moving", "fuel.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Fuel5", "Fuel5", "moving", "fuel.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Fuel6", "Fuel6", "moving", "fuel.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        # landing spots 1 to 6
+        add_object_class_data 		= ("ObjectMotion:Landing1", "Landing1", "moving", "landing_spots.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Landing2", "Landing2", "moving", "landing_spots.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Landing3", "Landing3", "moving", "landing_spots.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Landing4", "Landing4", "moving", "landing_spots.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Landing5", "Landing5", "moving", "landing_spots.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        add_object_class_data 		= ("ObjectMotion:Landing6", "Landing6", "moving", "landing_spots.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)).param(
+
+        #3) finish spot 7
+        add_object_class_data 		= ("ObjectMotion:Finish7", "Finish7", "moving", "finish_spot.ac"),
+        add_object_class_coordinates 	= (0.0, 0.0, 0.0)
         )
-        )
+        
+    )
+    )
 
     mymods.append(dueca.Module(
         "controller", "", sim_priority).param(
             set_timing = sim_timing,
             check_timing = (10000, 20000),
-            Kp = 10.0,
-            Kd = 0.0,
+            Prop_roll = 10.0*20800.0,
+            Prop_pitch = 10.0*17400.0,
+            Prop_yaw = 10.0*16500.0,
+            Der_roll = 0.0,
+            Der_pitch = 0.0,
+            Der_yaw = 0.0,
             rref = 15.0 * 3.1415/180, # max rate reference in rad per sec
             Tp = 10.0,
             z_ref_mult = 2.0,

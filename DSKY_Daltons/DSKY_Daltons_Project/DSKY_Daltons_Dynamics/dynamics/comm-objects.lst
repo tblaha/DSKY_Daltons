@@ -13,6 +13,7 @@ SimCourse2021/comm-objects/VehicleStateStream.dco
 SimCourse2021/comm-objects/InitialConditionsEvent.dco
 SimCourse2021/comm-objects/RespawnEvent.dco
 SimCourse2021/comm-objects/FuelRewardEvent.dco
+SimCourse2021/comm-objects/TerrainHeightStream.dco
 
 WorldView/comm-objects/ObjectMotion.dco
 WorldListener/comm-objects/BaseObjectMotion.dco

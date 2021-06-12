@@ -1,0 +1,11 @@
+# this file contains a list of all communicated objects needed by this
+# specific module
+# specify these with the .dco extension, examples:
+# RefereeTestGUI/comm-objects/MyDataObject.dco
+# Generic/comm-objects/PrimaryControls.dco
+SimCourse2021/comm-objects/AnnouncementEvent.dco
+SimCourse2021/comm-objects/FuelRewardEvent.dco
+SimCourse2021/comm-objects/InitialConditionsEvent.dco
+SimCourse2021/comm-objects/LeaderboardStream.dco
+SimCourse2021/comm-objects/RespawnEvent.dco
+SimCourse2021/comm-objects/VehicleStateStream.dco

@@ -1,0 +1,8 @@
+
+(Type int)
+ 
+(Stream LeaderboardStream
+               (int Team1Score (Default 0))
+               (int Team2Score (Default 0))
+               (int Team3Score (Default 0))
+)

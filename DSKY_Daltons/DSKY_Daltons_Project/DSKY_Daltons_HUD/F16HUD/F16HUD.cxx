@@ -13,7 +13,7 @@
 */
 
 static const char c_id[] =
-"$Id: F16HUD.cxx,v 1.16 2021/06/06 00:06:22 tblaha Exp $";
+"$Id: F16HUD.cxx,v 1.18 2021/06/12 20:05:08 tblaha Exp $";
 
 #define F16HUD_cxx
 // include the definition of the module class
@@ -25,6 +25,8 @@ static const char c_id[] =
 #define E_MOD
 // #define D_MOD
 #include <debug.h>
+#include <Eigen/Dense>
+#include <vector>
 
 // include additional files needed for your calculation here
 
@@ -284,16 +286,55 @@ void F16HUD::doCalculation(const TimeSpec& ts)
 //void F16HUD::fillData(HUD& hud, const YourData& your_data)
 void F16HUD::fillData(HUD& hud, const HUDbundle& myVS)
 {
-    hud.SetSpeedTapeSpeedIAS(myVS.u);
+    Eigen::Quaternionf q {myVS.e0, myVS.ex, myVS.ey, myVS.ez};
+    Eigen::Vector3f VB {myVS.u, myVS.v, myVS.w};
+
+    Eigen::Vector3f VI = q * VB; // hamiltonion product #operatoroverloading
+    Eigen::Vector2f VI_proj {VI(0), VI(1)};
+
+    Eigen::Vector3f PosI_proj {myVS.x, myVS.y, 0}; // inertial position. projected on the ground 
+
+    // horizontal speed and lateral speed
+    hud.SetSpeedTapeSpeedIAS(VI_proj.norm());
     hud.SetSpeedTapeLateralSpeed(myVS.v);
+
     hud.SetAltTapeAltitude(-myVS.z);
+    hud.SetAltTapeFloor(myVS.terrain_h);
+    hud.SetAltTapeTermAlt(-myVS.terminal_z);
+    hud.SetAltTapeRates(-VI(2), myVS.max_rate_sp);
+
+
+    // attitude
     hud.SetPitchLadderPitchAngle(myVS.theta);
     hud.SetPitchLadderRollAngle(myVS.phi);
     hud.SetBankIndicatorRollAngle(myVS.phi);
     hud.SetHeadingTapeHeading(myVS.psi);
-    hud.SetAircraftReferenceNz(myVS.thrust);
 
-    hud.SetAircraftReferenceLandingSite(-myVS.x, -myVS.y, myVS.psi);
+    // goodies
+    hud.SetAircraftReferenceNz(myVS.thrust, myVS.sat_pos || myVS.sat_neg);
+    hud.SetAircraftReferenceFuel(myVS.mass - 4500.0f);
+    hud.SetAircraftReferenceSpeedVector(VI_proj);
+
+    std::vector<Eigen::Vector3f> landing_sites{};
+    std::vector<Eigen::Vector3f> other_groups{};
+    landing_sites.push_back(Eigen::Vector3f(myVS.L1_x, myVS.L1_y, myVS.L1_z) - PosI_proj);
+    landing_sites.push_back(Eigen::Vector3f(myVS.L2_x, myVS.L2_y, myVS.L2_z) - PosI_proj);
+    landing_sites.push_back(Eigen::Vector3f(myVS.L3_x, myVS.L3_y, myVS.L3_z) - PosI_proj);
+    landing_sites.push_back(Eigen::Vector3f(myVS.L4_x, myVS.L4_y, myVS.L4_z) - PosI_proj);
+    landing_sites.push_back(Eigen::Vector3f(myVS.L5_x, myVS.L5_y, myVS.L5_z) - PosI_proj);
+    landing_sites.push_back(Eigen::Vector3f(myVS.L6_x, myVS.L6_y, myVS.L6_z) - PosI_proj);
+    landing_sites.push_back(Eigen::Vector3f(myVS.Lf_x, myVS.Lf_y, myVS.Lf_z) - PosI_proj);
+    
+    other_groups.push_back(Eigen::Vector3f(myVS.G1_x, myVS.G1_y, myVS.G1_z) - PosI_proj);
+    other_groups.push_back(Eigen::Vector3f(myVS.G3_x, myVS.G3_y, myVS.G3_z) - PosI_proj);
+
+    hud.SetAircraftReferenceYaw(myVS.psi);
+    hud.SetAircraftReferenceLandingSites(landing_sites);
+    hud.SetAircraftReferenceOtherGroups(other_groups);
+    hud.SetAircraftReferenceRangeScale(myVS.hud_range);
+
+    hud.SetAircraftReferenceMessage(myVS.message);
+    hud.SetAircraftReferenceLeaderboard(myVS.Team1Score, myVS.Team2Score, myVS.Team3Score);
 }
 
 // Make a TypeCreator object for this module, the TypeCreator

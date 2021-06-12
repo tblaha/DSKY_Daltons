@@ -1,0 +1,10 @@
+
+
+(Type double)
+ 
+(Stream TerrainHeightStream
+               (double TerrainHeightGroup1)
+               (double TerrainHeightGroup2)
+               (double TerrainHeightGroup3)
+           
+)

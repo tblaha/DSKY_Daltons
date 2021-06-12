@@ -82,12 +82,12 @@ void AltTape::DrawGL()
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       
       // draw tape
-      // big ticks every 500 ft
-      // small ticks every 100 ft;
+      // big ticks every 10m
+      // small ticks every 2m
 
       // get modulus of alt_ft:
-      double mod = fmod(alt_ft, 500.0);
-      // double fivehundredft = (alt_ft - mod)/500.0;
+      double mod = fmod(alt_ft, 10.0);
+      //double fivehundredft = (alt_ft - mod)/10.0;
 
       // cout << "altitude:      " << altitude << endl;
       // cout << "alt_ft:        " << alt_ft << endl;
@@ -98,27 +98,51 @@ void AltTape::DrawGL()
       glPushMatrix();
 
          // draw tape ticks
-         // units per altitude interval: 130 units cover 500 ft
-         // hence 0.26 units per ft
+         // units per altitude interval: 5 units cover 10m
+         // hence 0.5 units per m
 
          glEnable(GL_CLIP_PLANE0);
          glEnable(GL_CLIP_PLANE1);
 
-         glTranslatef(0.0, -mod*0.26, 0.0);
+         //glTranslatef(0.0, -mod*12.5, 0.0);
+         glTranslatef(0.0, -alt_ft*13.02083, 0.0);
          
          glLineWidth(lineWidth);
          glColor3fv(lineColor);
          glBegin(GL_LINES);
-            for (icount=0; icount<5; icount++)
+            for (icount=0; icount<11; icount++)
             {
-               glVertex2f( 0.0, -260.0+icount*130.0);
-               glVertex2f(14.0, -260.0+icount*130.0);
+               glVertex2f( 0.0, icount*130.0);
+               glVertex2f(15.0, icount*130.0);
                for (jcount=0; jcount<5; jcount++)
                {
-                  glVertex2f( 0.0, -260.0+icount*130.0+jcount*26.0);
-                  glVertex2f( 9.0, -260.0+icount*130.0+jcount*26.0);
+                  glVertex2f( 0.0, icount*130.0+jcount*26.0);
+                  glVertex2f( 7.5, icount*130.0+jcount*26.0);
                }
             }
+         glEnd();
+
+         // draw floor
+         //glTranslatef(0.0, -mod*0.26, 0.0);
+         glLineWidth(5*lineWidth);
+         float red[3] {1.0, 0, 0};
+         glColor3fv(red);
+         glBegin(GL_LINES);
+            glVertex2f(0.0, (_floor_h)*13.02083); // draw floor
+            glVertex2f(50.0, (_floor_h)*13.02083); // draw floor
+         glEnd();
+
+         // draw term alt estimate
+         //glTranslatef(0.0, -mod*0.26, 0.0);
+         glLineWidth(2*lineWidth);
+         glColor3fv(lineColor);
+         glBegin(GL_LINES);
+            glVertex2f(0.0, (_term_alt)*13.02083);
+            glVertex2f(-20.0, 10+(_term_alt)*13.02083); 
+            glVertex2f(-20.0, 10+(_term_alt)*13.02083);
+            glVertex2f(-20.0, -10+(_term_alt)*13.02083);
+            glVertex2f(-20.0, -10+(_term_alt)*13.02083);
+            glVertex2f(0.0, (_term_alt)*13.02083);
          glEnd();
 
          // disable clipping planes
@@ -133,12 +157,14 @@ void AltTape::DrawGL()
          glEnable(GL_CLIP_PLANE1);
          glEnable(GL_CLIP_PLANE2);
          
-         for (icount=0; icount<5; icount++)
+         for (icount=0; icount<11; icount++)
          {
-            double firstdigits = (alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 1000.0))/1000.0;
-            double lastdigit = fmod((alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 500.0)), 1000.0)/100.0;
-            snprintf(temp, 10, "%02d,%01d", (int)firstdigits, (int)lastdigit );
-            strokeString(24.0, -262.0+icount*130.0, temp, GLUT_STROKE_ROMAN, 0.15);
+            //double firstdigits = (alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 1000.0))/1000.0;
+            //double lastdigit = fmod((alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 500.0)), 1000.0)/100.0;
+            double firstdigits = (10*icount);
+            //snprintf(temp, 10, "%2d,%1d", (int)firstdigits, (int)lastdigit );
+            snprintf(temp, 10, "%2d", (int)firstdigits);
+            strokeString(24.0, icount*130.0, temp, GLUT_STROKE_ROMAN, 0.15);
          }
 
          glDisable(GL_CLIP_PLANE1);
@@ -148,12 +174,14 @@ void AltTape::DrawGL()
          glEnable(GL_CLIP_PLANE0);
          glEnable(GL_CLIP_PLANE3);
 
-         for (icount=0; icount<5; icount++)
+         for (icount=0; icount<11; icount++)
          {
-            double firstdigits = (alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 1000.0))/1000.0;
-            double lastdigit = fmod((alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 500.0)), 1000.0)/100.0;
-            snprintf(temp, 10, "%02d,%01d", (int)firstdigits, (int)lastdigit );
-            strokeString(24.0, -262.0+icount*130.0, temp, GLUT_STROKE_ROMAN, 0.15);
+            //double firstdigits = (alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 1000.0))/1000.0;
+            //double lastdigit = fmod((alt_ft + icount*500.0 - 1000.0 - fmod(alt_ft + icount*500.0 - 1000.0, 500.0)), 1000.0)/100.0;
+            double firstdigits = (10*icount);
+            //snprintf(temp, 10, "%2d,%1d", (int)firstdigits, (int)lastdigit );
+            snprintf(temp, 10, "%2d", (int)firstdigits);
+            strokeString(24.0, icount*130.0, temp, GLUT_STROKE_ROMAN, 0.15);
          }
 
          // disable clipping planes
@@ -187,33 +215,46 @@ void AltTape::DrawGL()
 
 
          // show altitude
-         mod = fmod(alt_ft, 1000.0);
-         double thousands = (alt_ft-mod)/1000.0;
-         mod = mod - fmod(mod, 10.0);
+         // mod = fmod(alt_ft, 1000.0);
+         // double thousands = (alt_ft-mod)/1000.0;
+         // mod = mod - fmod(mod, 10.0);
          glColor3fv(lineColor);
-         snprintf(temp, 10, "%2d,%03d", (int)thousands, (int)mod);
+         snprintf(temp, 10, "%3.1f", (float)alt_ft);
          strokeString(100.0, -9.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
 
 
          // draw radio altitude outline
-         glLineWidth(lineWidth);
-         glColor3fv(lineColor);
-         glBegin(GL_LINE_LOOP);
-            glVertex2f( -22.0, -158.0);
-            glVertex2f(  44.0, -158.0);
-            glVertex2f(  44.0, -189.0);
-            glVertex2f( -22.0, -189.0);
-            glVertex2f( -22.0, -158.0);
-         glEnd();
-         strokeString(-50.0, -182.0, "AR", GLUT_STROKE_ROMAN, 0.15);
-         snprintf(temp, 10, "%4.0f", (alt_ft-fmod(alt_ft, 10.0)));
+         // glLineWidth(lineWidth);
+         // glColor3fv(lineColor);
+         // glBegin(GL_LINE_LOOP);
+         //    glVertex2f( -22.0, -158.0);
+         //    glVertex2f(  44.0, -158.0);
+         //    glVertex2f(  44.0, -189.0);
+         //    glVertex2f( -22.0, -189.0);
+         //    glVertex2f( -22.0, -158.0);
+         // glEnd();
+         // strokeString(-50.0, -182.0, "AR", GLUT_STROKE_ROMAN, 0.15);
+         // snprintf(temp, 10, "%4.0f", (alt_ft-fmod(alt_ft, 10.0)));
+         // strokeString( 40.0, -182.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
+         //strokeString(-50.0, -182.0, "R", GLUT_STROKE_ROMAN, 0.15);
+
+         // floor height
+         snprintf(temp, 10, "%2d", (int)_floor_h);
+         strokeString(100.0, -40.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
+
+         // vertical rate
+         snprintf(temp, 10, "R%3.1f ", (float)_rate);
          strokeString( 40.0, -182.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
+
+         // max commandable rate in current mode
+         snprintf(temp, 10, "M%3.0f", (float)_max_rate);
+         strokeString( 100.0, -182.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
 
 
          // draw altitude low indicator
-         strokeString(-50.0, -222.0, "AL", GLUT_STROKE_ROMAN, 0.15);
-         snprintf(temp, 10, "%4.0f", 300.0);
-         strokeString( 40.0, -222.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
+         // strokeString(-50.0, -222.0, "AL", GLUT_STROKE_ROMAN, 0.15);
+         // snprintf(temp, 10, "%4.0f", 300.0);
+         // strokeString( 40.0, -222.0, temp, GLUT_STROKE_ROMAN, 0.15, 1);
    
       glPopMatrix();   // restore
 

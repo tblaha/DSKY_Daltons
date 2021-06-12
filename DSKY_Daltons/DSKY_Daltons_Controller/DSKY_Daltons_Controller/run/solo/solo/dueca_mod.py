@@ -85,8 +85,12 @@ if this_node_id == ecs_node:
         "controller", "", sim_priority).param(
             set_timing = sim_timing,
             check_timing = (10000, 20000),
-            Kp = 1.0,
-            Kd = 0.0,
+            Prop_roll = 20800.0,
+            Prop_pitch = 17400.0,
+            Prop_yaw = 16500.0,
+            Der_roll = 0.0,
+            Der_pitch = 0.0,
+            Der_yaw = 0.0,
             ))
 
     mymods.append(dueca.Module('multi-stick', "", sim_priority).param(

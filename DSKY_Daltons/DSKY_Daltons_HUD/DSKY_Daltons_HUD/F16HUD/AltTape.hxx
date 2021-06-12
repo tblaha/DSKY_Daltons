@@ -32,6 +32,9 @@ class AltTape
       inline void SetLineColor(double r, double g, double b){lineColor[0] = (GLfloat)r; lineColor[1] = (GLfloat)g; lineColor[2] = (GLfloat)b;}
       inline void SetAltitude(float alt_m){altitude = alt_m;}
       inline void SetAltitudeBug(float alt_bug_m){altitude_bug = alt_bug_m;}
+      inline void SetFloor(float floor_h){_floor_h = floor_h;}
+      inline void SetTermAlt(float term_alt){_term_alt = term_alt;}
+      inline void SetRates(float rate, float max_rate) {_rate = rate; _max_rate = max_rate;}
 
       // opengl display
       void DrawGL();
@@ -48,6 +51,12 @@ class AltTape
 
       double altitude;
       double altitude_bug;
+      double _floor_h{};
+      double _term_alt{};
+
+      double _rate{};
+      double _max_rate{};
+
 };
 
 #endif

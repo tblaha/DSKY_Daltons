@@ -1,0 +1,7 @@
+(Type int)
+(Type double)
+
+(Event FuelRewardEvent
+		(int GroupNumber)
+		(double fuel_reward)
+)		

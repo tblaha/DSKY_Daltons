@@ -42,45 +42,28 @@ class controller: public SimulationModule
 private: // simulation data
   // declare the data you need in your simulation
   // Input rates
-  float myRollRate;
-  float myPitchRate;
-  float myYawRate;
+  Eigen::Array3f myRates{};
   float myThrottle;
   // Maximum angular rates
   float rref;
+  // Maximum/minium thurster moments
+  float maxThrusterMoment;
   // Vehicle angular rates
-  float myp;
-  float myq;
-  float myr;
-  float myp_prev {0};
-  float myq_prev {0};
-  float myr_prev {0};
+  Eigen::Array3f mypqr{};
   // Error
-  float ep;
-  float eq;
-  float er;
+  Eigen::Array3f epqr{};
   // Proportional control
-  float Kp;
-  float Pp;
-  float Pq;
-  float Pr;
+  Eigen::Array3f Prop_pqr{};
+  float Kp_p {1.0f};
+  float Kp_q {1.0f};
+  float Kp_r {1.0f};
+  Eigen::Array3f Prop_gain{};
   // Derivative control
-  float Kd;
-  float Dp;
-  float Dq;
-  float Dr;
-  // Controller output
-  float pout;
-  float qout;
-  float rout;
-  // Angular accelerations
-  float P;
-  float Q;
-  float R;
-  // Moments of Inertia
-  float Ixx;
-  float Iyy;
-  float Izz;
+  Eigen::Array3f Der_pqr{};
+  float Kd_p {0.0f};
+  float Kd_q {0.0f};
+  float Kd_r {0.0f};
+  Eigen::Array3f Der_gain{};
   // Output Forces and Moments
   float myMx;
   float myMy;
@@ -88,12 +71,14 @@ private: // simulation data
   float myFx;
   float myFy;
   float myFz;
-  // Data storage
-  float prev_pout;
-  float prev_qout;
-  float prev_rout;
+  bool sat_neg{};
+  bool sat_pos{};
+  float vertical_rate_sp{};
+  float current_z{};
+  float terminal_z{};
+  float map_range_setting{};
 
-  float maxThrusterMoment;
+  Eigen::Array3f epqr_prev{0,0,0};
 
   /**
    * @brief Thrust controller internal variables

@@ -4,6 +4,8 @@
 (Stream flightControlModes
     (float max_rate_sp (Default 10.0f))
     (float vertical_rate_sp (Default 0.0f))
+    (float terminal_z (Default 0.0f))
+    (float hud_range (Default 0.0f))
     (float phi_d (Default 0.0f))
     (float theta_d (Default 0.0f))
     (float psi_d (Default 0.0f))
